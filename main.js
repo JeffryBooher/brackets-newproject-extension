@@ -52,7 +52,7 @@ define(function (require, exports, module) {
         
     var prefs = PreferencesManager.getPreferenceStorage(module);
 
-    var illegalFilenamesRegEx = /^(\.+|com[1-9]|lpt[1-9]|nul|con|prn|aux)$/i;
+    var _illegalFilenamesRegEx = /^(\.+|com[1-9]|lpt[1-9]|nul|con|prn|aux)$/i;
 
     
     function convertUnixPathToWindowsPath(path) {
@@ -98,13 +98,13 @@ define(function (require, exports, module) {
     }
     
     function getUserHomeDirectory() {
-        var parts = 2,
+        var parts = 4,
             folder = brackets.app.getApplicationSupportDirectory();
         
         if (brackets.platform === "win") {
             parts = 3;
         }
-        return "/" + folder.split("/").slice(0, parts).join("/");
+        return folder.split("/").slice(0, parts).join("/");
         
     }
 
@@ -137,7 +137,7 @@ define(function (require, exports, module) {
         Dialogs.showModalDialog(
             DefaultDialogs.DIALOG_ID_ERROR,
             ExtensionStrings.DIALOG_TITLE,
-            StringUtils.format(message, err, folder)
+            StringUtils.format(message, err, convertUnixPathToWindowsPath(folder))
         );
     }
     
@@ -215,6 +215,9 @@ define(function (require, exports, module) {
                 for (i = 0; i < fileList.length; i++) {
                     doCopy(destination, cannonicalizeDirectoryPath(source) + fileList[i]);
                 }
+            } else if (err === brackets.fs.ERR_NOT_FOUND){
+                // No Template Folder? No Problem... Nothing to copy!
+                promise.resolve();
             } else {
                 promise.reject(err);
             }
