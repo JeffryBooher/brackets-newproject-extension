@@ -53,6 +53,8 @@ define(function (require, exports, module) {
     var prefs = PreferencesManager.getPreferenceStorage(module);
 
     var _illegalFilenamesRegEx = /^(\.+|com[1-9]|lpt[1-9]|nul|con|prn|aux)$/i;
+    
+    var _module = module;
 
     
     function convertUnixPathToWindowsPath(path) {
@@ -109,7 +111,7 @@ define(function (require, exports, module) {
     }
 
     function getTemplateFilesFolder() {
-        return brackets.app.getApplicationSupportDirectory() + "/extensions/user/newproject/templateFiles";
+        return FileUtils.getNativeModuleDirectoryPath(_module) + "/templateFiles";
     }
     
     function getUserDocumentsFolder() {
