@@ -2,8 +2,8 @@
     "name": "jeffbooher.new-project",
     "title": "Brackets New Project Creator",
     "description": "Create New Projects without leaving Brackets.",
-    "homepage": "https://github.com/JeffryBooher/Stuff/tree/master/brackets-extensions/NewProject",
-    "version": "0.0.4",
+    "homepage": "https://github.com/JeffryBooher/brackets-newproject-extension",
+    "version": "0.0.5",
     "author": "Jeffry Booher|jsbooher@adobe.com (http://www.facebook.com/JeffryBooher)",
     "license": "MIT",
     "engines": {
