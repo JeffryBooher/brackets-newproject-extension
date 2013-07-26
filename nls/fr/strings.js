@@ -36,9 +36,10 @@ define({
     "CHOOSE_TEMPLATE_LABEL"             : "Modèle:",
     "PROJECT_NAME_LABEL"                : "Nom:",
     "DIALOG_TITLE"                      : "Créer un Nouveau Projet",
-    "NO_TEMPLATE_OPTION_LABEL"          : "Rien (Projet Vide)"
+    "NO_TEMPLATE_OPTION_LABEL"          : "Rien (Projet Vide)",
     "ERROR_NOT_A_DIRECTORY"             : "Impossible d'écrire sur {1} porque n'est pas un répertoire valide, est déconnecté, ou n'existe pas.",
     "ERROR_UNABLE_TO_WRITE_DIRECTORY"   : "unable to write to {1} (Error {0})",
     "INVALID_PROJECT_NAME"              : "Invalide Nom du Projet",
     "INVALID_PROJECGT_NAME_MESSAGE"     : "Les noms de projet ne peuvent pas contenir les caractères suivants: /?*:;{}<>\\| Ou utiliser n'importe quel système mots réservés.",
+    "ONE_OR_MORE_TEMPLATE_FILES_FAILED" : "Impossible de copier tous les fichiers de modèle dans le dossier de destination. Une ou plusieurs opérations de copie a échoué."
 });

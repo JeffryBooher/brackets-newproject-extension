@@ -41,4 +41,5 @@ define({
     "ERROR_UNABLE_TO_WRITE_DIRECTORY"   : "unable to write to {1} (Error {0})",
     "INVALID_PROJECT_NAME"              : "Invalid Project Name",
     "INVALID_PROJECGT_NAME_MESSAGE"     : "Project names cannot contain the following characters: /?*:;{}<>\\| or use any system reserved words.",
+    "ONE_OR_MORE_TEMPLATE_FILES_FAILED" : "Unable to copy all template files to the destination folder. One or more copy operations failed."
 });

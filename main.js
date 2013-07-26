@@ -49,7 +49,9 @@ define(function (require, exports, module) {
 
     /** @const {string} New Project command ID */
     var FILE_NEW_PROJECT            = "file.newProject";
-        
+    
+    var COPY_TEMPLATE_FILES_FAILED  = -9000;
+    
     var prefs = PreferencesManager.getPreferenceStorage(module);
 
     var _illegalFilenamesRegEx = /^(\.+|com[1-9]|lpt[1-9]|nul|con|prn|aux)$/i;
@@ -130,7 +132,9 @@ define(function (require, exports, module) {
 
     function showProjectErrorMessage(err, folder, isDirectory) {
         var message;
-        if (err === brackets.fs.NO_ERROR && !isDirectory) {
+        if (err === COPY_TEMPLATE_FILES_FAILED) {
+            message = ExtensionStrings.ONE_OR_MORE_TEMPLATE_FILES_FAILED;
+        } else if (err === brackets.fs.NO_ERROR && !isDirectory) {
             message = ExtensionStrings.ERROR_NOT_A_DIRECTORY;
         } else {
             message = ExtensionStrings.ERROR_UNABLE_TO_WRITE_DIRECTORY;
@@ -217,9 +221,9 @@ define(function (require, exports, module) {
                 for (i = 0; i < fileList.length; i++) {
                     doCopy(destination, cannonicalizeDirectoryPath(source) + fileList[i]);
                 }
-            } else if (err === brackets.fs.ERR_NOT_FOUND){
+            } else if (err === brackets.fs.ERR_NOT_FOUND) {
                 // No Template Folder? No Problem... Nothing to copy!
-                promise.resolve();
+                promise.resolve(0);
             } else {
                 promise.reject(err);
             }
@@ -238,8 +242,13 @@ define(function (require, exports, module) {
         brackets.fs.makedir(projectFolder, 777, function (err) {
             if (err === brackets.fs.NO_ERROR) {
                 copyTemplateFiles(projectFolder, templateName)
-                    .done(function () {
-                        promise.resolve();
+                    .done(function (errorCount) {
+                        if (errorCount && errorCount > 0) {
+                            showProjectErrorMessage(COPY_TEMPLATE_FILES_FAILED, projectFolder);
+                            promise.reject();
+                        } else {
+                            promise.resolve();
+                        }
                     })
                     .fail(function () {
                         promise.reject();
@@ -370,7 +379,7 @@ define(function (require, exports, module) {
             e.stopPropagation();
         });
         
-        $OkBtn.click(function(e) {
+        $OkBtn.click(function (e) {
             if (!validateProjectName($projectNameInput.val())) {
                 e.preventDefault();
                 e.stopPropagation();
