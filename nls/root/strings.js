@@ -29,10 +29,10 @@
 define({
     "MY_DOCUMENTS"                      : "My Documents",
     "DOCUMENTS"                         : "Documents",
-    "MENU_TITLE"                        : "New Project...",
+    "MENU_TITLE"                        : "New Project…",
     "NEW_PROJECT_BASE_NAME"             : "Untitled-",
-    "CHANGE"                            : "Change",
-    "PROJECT_DIRECTORY_lABEL"           : "Projects will be Created in this Folder:",
+    "CHANGE"                            : "Change…",
+    "PROJECT_DIRECTORY_lABEL"           : "Parent Folder:",
     "CHOOSE_TEMPLATE_LABEL"             : "Template:",
     "PROJECT_NAME_LABEL"                : "Name:",
     "DIALOG_TITLE"                      : "Create New Project",
