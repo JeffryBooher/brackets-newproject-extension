@@ -169,11 +169,22 @@ define(function (require, exports, module) {
         brackets.fs.stat(outFile, function (err, stats) {
             if (err === brackets.fs.ERR_NOT_FOUND) {
                 brackets.fs.readFile(inFile, "utf8", function (err, data) {
-                    brackets.fs.writeFile(outFile, data, "utf8", function (err) {
-                        promise.resolve(err);
-                    });
+                    if (err === brackets.fs.NO_ERROR) {
+                        brackets.fs.writeFile(outFile, data, "utf8", function (err) {
+                            if (err === brackets.fs.NO_ERROR) {
+                                promise.resolve();
+                            } else {
+                                // unable to write file
+                                promise.reject(err);
+                            }
+                        });
+                    } else {
+                        // unable to read file
+                        promise.reject(err);
+                    }
                 });
             } else {
+                // file already exists
                 promise.reject(err);
             }
         });
