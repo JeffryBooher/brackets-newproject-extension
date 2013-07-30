@@ -48,9 +48,10 @@ define(function (require, exports, module) {
     
 
     /** @const {string} New Project command ID */
-    var FILE_NEW_PROJECT            = "file.newProject";
+    var FILE_NEW_PROJECT                = "file.newProject";
     
-    var COPY_TEMPLATE_FILES_FAILED  = -9000;
+    var COPY_TEMPLATE_FILES_FAILED      = -9000,
+        CREATE_PARENT_DIRECTORY_ERROR   = -9001;
     
     var prefs = PreferencesManager.getPreferenceStorage(module);
 
@@ -130,11 +131,11 @@ define(function (require, exports, module) {
         return documents;
     }
 
-    function showProjectErrorMessage(err, folder, isDirectory) {
+    function showProjectErrorMessage(err, folder) {
         var message;
         if (err === COPY_TEMPLATE_FILES_FAILED) {
             message = ExtensionStrings.ONE_OR_MORE_TEMPLATE_FILES_FAILED;
-        } else if (err === brackets.fs.NO_ERROR && !isDirectory) {
+        } else if (err === CREATE_PARENT_DIRECTORY_ERROR) {
             message = ExtensionStrings.ERROR_NOT_A_DIRECTORY;
         } else {
             message = ExtensionStrings.ERROR_UNABLE_TO_WRITE_DIRECTORY;
@@ -155,7 +156,7 @@ define(function (require, exports, module) {
             Dialogs.showModalDialog(
                 DefaultDialogs.DIALOG_ID_ERROR,
                 ExtensionStrings.INVALID_PROJECT_NAME,
-                ExtensionStrings.INVALID_PROJECGT_NAME_MESSAGE
+                ExtensionStrings.INVALID_PROJECT_NAME_MESSAGE
             );
             return false;
         }
@@ -222,7 +223,7 @@ define(function (require, exports, module) {
                     doCopy(destination, cannonicalizeDirectoryPath(source) + fileList[i]);
                 }
             } else if (err === brackets.fs.ERR_NOT_FOUND) {
-                // No Template Folder? No Problem... Nothing to copy!
+                // No template folder is ok. Nothing to copy..
                 promise.resolve(0);
             } else {
                 promise.reject(err);
@@ -250,8 +251,9 @@ define(function (require, exports, module) {
                             promise.resolve();
                         }
                     })
-                    .fail(function () {
-                        promise.reject();
+                    .fail(function (err) {
+                        showProjectErrorMessage(err, projectFolder);
+                        promise.reject(err);
                     });
                 
             } else {
@@ -277,7 +279,7 @@ define(function (require, exports, module) {
                         promise.reject();
                     });
             } else {
-                showProjectErrorMessage(err, projectFolder, stats.isDirectory());
+                showProjectErrorMessage(CREATE_PARENT_DIRECTORY_ERROR, projectFolder);
                 promise.reject();
             }
         });
