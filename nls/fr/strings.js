@@ -29,9 +29,9 @@
 define({
     "MY_DOCUMENTS"                      : "My Documents",
     "DOCUMENTS"                         : "Documents",
-    "MENU_TITLE"                        : "Nouveau Projet...",
+    "MENU_TITLE"                        : "Nouveau Projet…",
     "NEW_PROJECT_BASE_NAME"             : "Sans_Titre-",
-    "CHANGE"                            : "Changer",
+    "CHANGE"                            : "Changer…",
     "PROJECT_DIRECTORY_lABEL"           : "Projet sera créé dans ce dossier:",
     "CHOOSE_TEMPLATE_LABEL"             : "Modèle:",
     "PROJECT_NAME_LABEL"                : "Nom:",
