@@ -1,0 +1,12 @@
+{
+    "name": "<yourname>.<extensionname>",
+    "title": "<your extension title>",
+    "description": "<fill in description>",
+    "homepage": "https://github.com/<repo>",
+    "version": "0.0.1",
+    "author": "<name etc, url, etc...>",
+    "license": "MIT",
+    "engines": {
+        "brackets": ">=0.24.0"
+    }
+}
