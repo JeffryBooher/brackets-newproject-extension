@@ -112,8 +112,11 @@ define(function (require, exports, module) {
             folder = folder.slice(1, -1);
         }
         
-        return folder.split("/").slice(0, parts).join("/");
+        var result = folder.split("/").slice(0, parts).join("/");
         
+        if (brackets.platform !== "win") {
+            result = "/" + result;
+        }
     }
 
     function getTemplateFilesFolder() {
