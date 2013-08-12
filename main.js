@@ -103,7 +103,7 @@ define(function (require, exports, module) {
     }
     
     function getUserHomeDirectory() {
-        var parts = 4,
+        var parts = 2,
             folder = brackets.app.getApplicationSupportDirectory();
         
         if (brackets.platform === "win") {
@@ -290,7 +290,7 @@ define(function (require, exports, module) {
                         promise.reject();
                     });
             } else {
-                showProjectErrorMessage(CREATE_PARENT_DIRECTORY_ERROR, projectFolder);
+                showProjectErrorMessage(CREATE_PARENT_DIRECTORY_ERROR, parentFolder);
                 promise.reject();
             }
         });
