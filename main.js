@@ -117,6 +117,8 @@ define(function (require, exports, module) {
         if (brackets.platform !== "win") {
             result = "/" + result;
         }
+        
+        return result;
     }
 
     function getTemplateFilesFolder() {
