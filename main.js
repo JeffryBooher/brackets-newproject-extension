@@ -108,7 +108,10 @@ define(function (require, exports, module) {
         
         if (brackets.platform === "win") {
             parts = 3;
+        } else if (folder[0] === "/") {
+            folder = folder.slice(1, -1);
         }
+        
         return folder.split("/").slice(0, parts).join("/");
         
     }
