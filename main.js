@@ -58,8 +58,9 @@ define(function (require, exports, module) {
     var _illegalFilenamesRegEx = /^(\.+|com[1-9]|lpt[1-9]|nul|con|prn|aux)$/i;
     
     var _module = module;
-
     
+    var _documentsDir;
+
     function convertUnixPathToWindowsPath(path) {
         if (brackets.platform === "win") {
             path = path.replace(new RegExp(/\//g), "\\");
@@ -98,47 +99,10 @@ define(function (require, exports, module) {
         return FileUtils.getBaseName(path);
     }
     
-    function isLegacyWindowsVersion() {
-        return (navigator.userAgent.indexOf("Winodws NT 5.") !== -1);
-    }
-    
-    function getUserHomeDirectory() {
-        var parts = 2,
-            folder = brackets.app.getApplicationSupportDirectory();
-        
-        if (brackets.platform === "win") {
-            parts = 3;
-        } else if (folder[0] === "/") {
-            folder = folder.slice(1, -1);
-        }
-        
-        var result = folder.split("/").slice(0, parts).join("/");
-        
-        if (brackets.platform !== "win") {
-            result = "/" + result;
-        }
-        
-        return result;
-    }
-
     function getTemplateFilesFolder() {
         return FileUtils.getNativeModuleDirectoryPath(_module) + "/templateFiles";
     }
     
-    function getUserDocumentsFolder() {
-        // TODO: Move this to the shell
-        var home = getUserHomeDirectory(),
-            documents;
-        
-        if (isLegacyWindowsVersion()) {
-            documents = home + "/" + ExtensionStrings.MY_DOCUMENTS;
-        } else {
-            documents = home + "/" + ExtensionStrings.DOCUMENTS;
-        }
-        
-        return documents;
-    }
-
     function showProjectErrorMessage(err, folder) {
         var message;
         if (err === COPY_TEMPLATE_FILES_FAILED) {
@@ -176,26 +140,20 @@ define(function (require, exports, module) {
             outFile = cannonicalizeDirectoryPath(destination) + getFilenameFromPath(inFile);
         brackets.fs.stat(outFile, function (err, stats) {
             if (err === brackets.fs.ERR_NOT_FOUND) {
-                brackets.fs.readFile(inFile, "utf8", function (err, data) {
+                brackets.fs.copyFile(inFile, outFile, function (err) {
                     if (err === brackets.fs.NO_ERROR) {
-                        brackets.fs.writeFile(outFile, data, "utf8", function (err) {
-                            if (err === brackets.fs.NO_ERROR) {
-                                promise.resolve();
-                            } else {
-                                // unable to write file
-                                promise.reject(err);
-                            }
-                        });
+                        promise.resolve();
                     } else {
-                        // unable to read file
+                        // unable to write file
                         promise.reject(err);
                     }
                 });
             } else {
-                // file already exists
+                // unable to read file
                 promise.reject(err);
             }
         });
+    
         return promise;
     }
 
@@ -350,7 +308,7 @@ define(function (require, exports, module) {
             newProjectOrdinal = prefs.getValue("newProjectOrdinal") || 1,
             defaultProjectName = ExtensionStrings.NEW_PROJECT_BASE_NAME +  newProjectOrdinal.toString(),
             prefsNewProjectFolder = prefs.getValue("newProjectsFolder"),
-            newProjectFolder = getUserDocumentsFolder();
+            newProjectFolder = _documentsDir;
         
         var context = {
             Strings: Strings,
@@ -410,10 +368,15 @@ define(function (require, exports, module) {
         
         initProjectTemplates($templateSelect);
     }
-    
-    ExtensionUtils.loadStyleSheet(module, "styles/styles.css");
-    CommandManager.register(ExtensionStrings.MENU_TITLE, FILE_NEW_PROJECT, handleNewProject);
-    var menu = Menus.getMenu(Menus.AppMenuBar.FILE_MENU);
-    menu.addMenuItem(FILE_NEW_PROJECT, undefined, Menus.AFTER, Commands.FILE_NEW_UNTITLED);
 
+    ExtensionUtils.loadStyleSheet(module, "styles/styles.css");
+    
+    brackets.fs.getDocumentsDir(function (err, documentsDir) {
+        _documentsDir = documentsDir;
+    
+        CommandManager.register(ExtensionStrings.MENU_TITLE, FILE_NEW_PROJECT, handleNewProject);
+        var menu = Menus.getMenu(Menus.AppMenuBar.FILE_MENU);
+        menu.addMenuItem(FILE_NEW_PROJECT, undefined, Menus.AFTER, Commands.FILE_NEW_UNTITLED);
+    });
+    
 });
