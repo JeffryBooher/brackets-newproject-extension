@@ -33,12 +33,9 @@ define(function (require, exports, module) {
         Commands                    = brackets.getModule("command/Commands"),
         CommandManager              = brackets.getModule("command/CommandManager"),
         ExtensionUtils              = brackets.getModule("utils/ExtensionUtils"),
-        AppInit                     = brackets.getModule("utils/AppInit"),
         Strings                     = brackets.getModule("strings"),
         StringUtils                 = brackets.getModule("utils/StringUtils"),
-        SidebarView                 = brackets.getModule("project/SidebarView"),
         Menus                       = brackets.getModule("command/Menus"),
-        PopUpManager                = brackets.getModule("widgets/PopUpManager"),
         FileUtils                   = brackets.getModule("file/FileUtils"),
         DefaultDialogs              = brackets.getModule("widgets/DefaultDialogs"),
         Dialogs                     = brackets.getModule("widgets/Dialogs"),
@@ -52,6 +49,10 @@ define(function (require, exports, module) {
     
     var COPY_TEMPLATE_FILES_FAILED      = -9000,
         CREATE_PARENT_DIRECTORY_ERROR   = -9001;
+    
+    /** @const {string} Template Config File Name */
+    var TEMPLATE_CONFIG_FILENAME        = "template.json",
+        TARGET_INITIAL_FILENAME         = "index.html";
     
     var prefs = PreferencesManager.getPreferenceStorage(module);
 
@@ -166,6 +167,11 @@ define(function (require, exports, module) {
             
         brackets.fs.readdir(source, function (err, fileList) {
             if (err === brackets.fs.NO_ERROR) {
+                // exclude the template config file
+                var newProjectConfigFileIndex = fileList.indexOf(TEMPLATE_CONFIG_FILENAME);
+                if (newProjectConfigFileIndex >= 0) {
+                    fileList = fileList.slice(0, newProjectConfigFileIndex - 1).concat(fileList.slice(newProjectConfigFileIndex, -1));
+                }
                 var failHandler = function () {
                     ++errorCount;
                 };
@@ -199,6 +205,12 @@ define(function (require, exports, module) {
                 for (i = 0; i < fileList.length; i++) {
                     doCopy(destination, cannonicalizeDirectoryPath(source) + fileList[i]);
                 }
+
+                // avoid race condition on empty folder                
+                if (fileList.length === 0) {
+                    promise.resolve(0);
+                }
+                
             } else if (err === brackets.fs.ERR_NOT_FOUND) {
                 // No template folder is ok. Nothing to copy..
                 promise.resolve(0);
@@ -210,9 +222,12 @@ define(function (require, exports, module) {
         return promise;
     }
     
+    function computeTemplateFolderLocation(templateName) {
+        return cannonicalizeDirectoryPath(getTemplateFilesFolder()) + templateName;
+    }
+    
     function copyTemplateFiles(destination, templateName) {
-        var templatesFilesFolder = cannonicalizeDirectoryPath(getTemplateFilesFolder()) + templateName;
-        return copyDirectory(destination, templatesFilesFolder);
+        return copyDirectory(destination, computeTemplateFolderLocation(templateName));
     }
 
     function createProjectFolder(projectFolder, templateName) {
@@ -242,7 +257,7 @@ define(function (require, exports, module) {
     }
     
     
-    function createNewProject(projectFolder, templateName) {
+    function createNewProject(projectFolder, templateName, opts) {
         var parentFolder = getParentDirectory(projectFolder),
             promise = new $.Deferred();
         
@@ -263,14 +278,21 @@ define(function (require, exports, module) {
         return promise;
     }
     
-    function openIndexFile(destination) {
-        var indexFilename = cannonicalizeDirectoryPath(destination) + "index.html";
-        brackets.fs.stat(indexFilename, function (err, stats) {
+    function doOpenProjectFile(destination, filename, opts) {
+        var fullpath = cannonicalizeDirectoryPath(destination) + filename;
+        brackets.fs.stat(fullpath, function (err, stats) {
             if (err === brackets.fs.NO_ERROR && stats.isFile()) {
-                CommandManager.execute(Commands.FILE_ADD_TO_WORKING_SET, { fullPath: indexFilename });
+                CommandManager.execute(Commands.FILE_ADD_TO_WORKING_SET, { fullPath: fullpath });
             }
         });
-
+    }
+    
+    function openStarterFile(destination, opts) {
+        if (opts.hasOwnProperty("starterFilename")) {
+            doOpenProjectFile(destination, opts.starterFilename, opts);
+        } else {
+            doOpenProjectFile(destination, TARGET_INITIAL_FILENAME, opts);
+        }
     }
     
     function addTemplateFromDirectoryEntry($templateSelect, directoryName) {
@@ -282,7 +304,6 @@ define(function (require, exports, module) {
             }
         };
         brackets.fs.stat(cannonicalizeDirectoryPath(templatesFilesFolder) + directoryName, addTemplateDirectory);
-        
     }
     
     function initProjectTemplates($templateSelect) {
@@ -296,6 +317,28 @@ define(function (require, exports, module) {
                 }
             }
         });
+    }
+    
+    function getProjectTemplateOptions(templateName) {
+        var opts = {},
+            result = new $.Deferred(),
+            templateFolder = computeTemplateFolderLocation(templateName),
+            templateConfigFilename = cannonicalizeDirectoryPath(templateFolder) + TEMPLATE_CONFIG_FILENAME;
+    
+        brackets.fs.stat(templateConfigFilename, function (err) {
+            if (err !== brackets.fs.NO_ERROR) {
+                result.resolve(opts);
+            } else {
+                brackets.fs.readFile(templateConfigFilename, "utf8", function (err, data) {
+                    if (err === brackets.fs.NO_ERROR) {
+                        opts = $.extend({}, opts, JSON.parse(data));
+                    }
+                    result.resolve(opts);
+                });
+            }
+        });
+        
+        return result;
     }
     
     function handleNewProject(commandData) {
@@ -325,12 +368,15 @@ define(function (require, exports, module) {
                     projectName = $projectNameInput.val(),
                     destination = cannonicalizeDirectoryPath(projectFolder) + ((projectName.length > 0) ? projectName : defaultProjectName),
                     templateName = $templateSelect.val();
-
-                createNewProject(destination, templateName).done(function () {
-                    ProjectManager.openProject(destination).done(function () {
-                        openIndexFile(destination);
+                
+                
+                getProjectTemplateOptions(templateName).done(function (opts) {
+                    createNewProject(destination, templateName, opts).done(function () {
+                        ProjectManager.openProject(destination).done(function () {
+                            openStarterFile(destination, opts);
+                        });
+                        prefs.setValue("newProjectOrdinal", ++newProjectOrdinal);
                     });
-                    prefs.setValue("newProjectOrdinal", ++newProjectOrdinal);
                 });
             }
         });
