@@ -60,7 +60,7 @@ define(function (require, exports, module) {
     
     var _module = module;
     
-    var _documentsDir;
+    var _documentsDir = brackets.app.getUserDocumentsDirectory();
 
     function convertUnixPathToWindowsPath(path) {
         if (brackets.platform === "win") {
@@ -417,12 +417,7 @@ define(function (require, exports, module) {
 
     ExtensionUtils.loadStyleSheet(module, "styles/styles.css");
     
-    brackets.fs.getDocumentsDir(function (err, documentsDir) {
-        _documentsDir = documentsDir;
-    
-        CommandManager.register(ExtensionStrings.MENU_TITLE, FILE_NEW_PROJECT, handleNewProject);
-        var menu = Menus.getMenu(Menus.AppMenuBar.FILE_MENU);
-        menu.addMenuItem(FILE_NEW_PROJECT, undefined, Menus.AFTER, Commands.FILE_NEW_UNTITLED);
-    });
-    
+    CommandManager.register(ExtensionStrings.MENU_TITLE, FILE_NEW_PROJECT, handleNewProject);
+    var menu = Menus.getMenu(Menus.AppMenuBar.FILE_MENU);
+    menu.addMenuItem(FILE_NEW_PROJECT, undefined, Menus.AFTER, Commands.FILE_NEW_UNTITLED);
 });
