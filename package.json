@@ -7,6 +7,6 @@
     "author": "Jeffry Booher|jsbooher@adobe.com (http://www.facebook.com/JeffryBooher)",
     "license": "MIT",
     "engines": {
-        "brackets": ">=0.24.0"
+        "brackets": ">=0.30.0"
     }
 }
