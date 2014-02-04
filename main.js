@@ -39,7 +39,7 @@ define(function (require, exports, module) {
         FileUtils                   = brackets.getModule("file/FileUtils"),
         DefaultDialogs              = brackets.getModule("widgets/DefaultDialogs"),
         Dialogs                     = brackets.getModule("widgets/Dialogs"),
-        NativeFileSystem            = brackets.getModule("file/NativeFileSystem").NativeFileSystem,
+        FileSystem                  = brackets.getModule("filesystem/FileSystem"),
         ExtensionStrings            = require("strings"),
         NewProjectDialogTemplate    = require("text!htmlContent/New-Project-Dialog.html");
     
@@ -389,15 +389,13 @@ define(function (require, exports, module) {
         $templateSelect = $("#project-template", $dlg);
         
         $changeProjectDirectoryBtn.click(function (e) {
-            NativeFileSystem.showOpenDialog(false, true, Strings.CHOOSE_FOLDER, newProjectFolder, null,
-                function (files) {
-                    if (files.length > 0 && files[0].length > 0) {
+            FileSystem.showOpenDialog(false, true, Strings.CHOOSE_FOLDER, newProjectFolder, null,
+                function (error, files) {
+                    if (!error && files && files.length > 0 && files[0].length > 0) {
                         newProjectFolder = files[0];
                         $projectDirectoryInput.val(convertUnixPathToWindowsPath(newProjectFolder));
                         prefs.setValue("newProjectsFolder", newProjectFolder);
                     }
-                },
-                function (error) {
                 });
             
             e.preventDefault();
