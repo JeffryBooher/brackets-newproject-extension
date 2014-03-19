@@ -43,9 +43,9 @@ define(function (require, exports, module) {
 
     /** @const {string} Extension Command ID */
     // TODO: Change these values so they are unique to your extension
-    var MY_COMMANDID                = "extension.command";      
-    var MY_MENUID                   = "extension-menu";         
-    var MY_MODULENAME               = "extension-module";    
+    var MY_COMMANDID                = "extension.command";
+    var MY_MENUID                   = "extension-menu";
+    var MY_MODULENAME               = "extension-module";
     
     /* Our extension's preferences */
     var prefs = PreferencesManager.getExtensionPrefs(MY_MODULENAME);
