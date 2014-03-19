@@ -43,7 +43,9 @@ define(function (require, exports, module) {
         ExtensionStrings            = require("strings"),
         NewProjectDialogTemplate    = require("text!htmlContent/New-Project-Dialog.html");
     
-
+    var MODULE_NAME                     = "BracketsNewProjectExtension";
+    
+    
     /** @const {string} New Project command ID */
     var FILE_NEW_PROJECT                = "file.newProject";
     
@@ -54,8 +56,10 @@ define(function (require, exports, module) {
     var TEMPLATE_CONFIG_FILENAME        = "template.json",
         TARGET_INITIAL_FILENAME         = "index.html";
     
-    var prefs = PreferencesManager.getPreferenceStorage(module);
-
+    var prefs = PreferencesManager.getExtensionPrefs(MODULE_NAME);
+    prefs.definePreference("newProjectsFolder", "string", "");
+    prefs.definePreference("newProjectOrdinal", "number", 1);
+    
     var _illegalFilenamesRegEx = /^(\.+|com[1-9]|lpt[1-9]|nul|con|prn|aux)$/i;
     
     var _module = module;
@@ -93,7 +97,6 @@ define(function (require, exports, module) {
             }
         }
         return path;
-        
     }
     
     function getFilenameFromPath(path) {
@@ -170,7 +173,7 @@ define(function (require, exports, module) {
                 // exclude the template config file
                 var newProjectConfigFileIndex = fileList.indexOf(TEMPLATE_CONFIG_FILENAME);
                 if (newProjectConfigFileIndex >= 0) {
-                    fileList = fileList.slice(0, newProjectConfigFileIndex - 1).concat(fileList.slice(newProjectConfigFileIndex, -1));
+                    fileList = fileList.slice(0, newProjectConfigFileIndex).concat(fileList.slice(newProjectConfigFileIndex, -1));
                 }
                 var failHandler = function () {
                     ++errorCount;
@@ -348,9 +351,9 @@ define(function (require, exports, module) {
             $projectDirectoryInput,
             $projectNameInput,
             $templateSelect,
-            newProjectOrdinal = prefs.getValue("newProjectOrdinal") || 1,
+            newProjectOrdinal = prefs.get("newProjectOrdinal") || 1,
             defaultProjectName = ExtensionStrings.NEW_PROJECT_BASE_NAME +  newProjectOrdinal.toString(),
-            prefsNewProjectFolder = prefs.getValue("newProjectsFolder"),
+            prefsNewProjectFolder = prefs.get("newProjectsFolder"),
             newProjectFolder = _documentsDir;
         
         var context = {
@@ -375,7 +378,7 @@ define(function (require, exports, module) {
                         ProjectManager.openProject(destination).done(function () {
                             openStarterFile(destination, opts);
                         });
-                        prefs.setValue("newProjectOrdinal", ++newProjectOrdinal);
+                        prefs.set("newProjectOrdinal", ++newProjectOrdinal);
                     });
                 });
             }
@@ -394,7 +397,7 @@ define(function (require, exports, module) {
                     if (!error && files && files.length > 0 && files[0].length > 0) {
                         newProjectFolder = files[0];
                         $projectDirectoryInput.val(convertUnixPathToWindowsPath(newProjectFolder));
-                        prefs.setValue("newProjectsFolder", newProjectFolder);
+                        prefs.set("newProjectsFolder", newProjectFolder);
                     }
                 });
             
