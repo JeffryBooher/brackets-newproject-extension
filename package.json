@@ -3,10 +3,10 @@
     "title": "Brackets New Project Creator",
     "description": "Create New Projects without leaving Brackets.",
     "homepage": "https://github.com/JeffryBooher/brackets-newproject-extension",
-    "version": "0.2.7",
+    "version": "0.3.1",
     "author": "Jeffry Booher|jsbooher@adobe.com (http://www.facebook.com/JeffryBooher)",
     "license": "MIT",
     "engines": {
-        "brackets": ">=0.30.0"
+        "brackets": ">=0.34.0"
     }
 }

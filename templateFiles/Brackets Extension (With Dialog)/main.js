@@ -42,16 +42,25 @@ define(function (require, exports, module) {
     
 
     /** @const {string} Extension Command ID */
+    // TODO: Change these values so they are unique to your extension
     var MY_COMMANDID                = "extension.command";
     var MY_MENUID                   = "extension-menu";
+    var MY_MODULENAME               = "extension-module";
     
     /* Our extension's preferences */
-    var prefs = PreferencesManager.getPreferenceStorage(module);
+    var prefs = PreferencesManager.getExtensionPrefs(MY_MODULENAME);
+    
+    // Define a preference to keep track of how many times our extension has been ivoked
+    prefs.definePreference("runCount", "number", 0);
 
     /* Cache our module info */
     var _module = module;
     
     function showMyDialog() {
+        // Increment our run count 
+        var runCount = prefs.get("runCount") || 0;
+        prefs.set("runCount", ++runCount);
+        
         // This is input data into the template
         var context = {
             Strings: Strings,
