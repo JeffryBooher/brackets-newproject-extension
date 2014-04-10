@@ -370,13 +370,15 @@ define(function (require, exports, module) {
                 result.resolve({status: STATUS_SUCCEEDED,
                                 newProjectName: projectName,
                                 ordinal: startingOrdinal});
-            } else if (err !== brackets.fs.ERR_NOT_FOUND && err !== brackets.fs.NO_ERROR) {
+            } else if (err !== brackets.fs.NO_ERROR) {
+                // Unknown File system error so just give up and try a random numbered project
                 startingOrdinal = _makeid();
                 result.resolve({status: STATUS_FAILED,
                                 reason: "unknown-error",
                                 newProjectName: ExtensionStrings.NEW_PROJECT_BASE_NAME + startingOrdinal,
                                 ordinal: startingOrdinal});
             } else if (depth && depth > 100) {
+                // Depth 
                 startingOrdinal = _makeid();
                 result.resolve({status: STATUS_FAILED,
                                 reason: "max-try-limit-hit",
