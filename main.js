@@ -52,6 +52,9 @@ define(function (require, exports, module) {
     var COPY_TEMPLATE_FILES_FAILED      = -9000,
         CREATE_PARENT_DIRECTORY_ERROR   = -9001;
     
+    var STATUS_SUCCEEDED                = 1,
+        STATUS_FAILED                   = 0;
+    
     /** @const {string} Template Config File Name */
     var TEMPLATE_CONFIG_FILENAME        = "template.json",
         TARGET_INITIAL_FILENAME         = "index.html";
@@ -344,6 +347,51 @@ define(function (require, exports, module) {
         return result;
     }
     
+    function _makeid() {
+        var i,
+            id = "",
+            possible = "0123456789";
+
+        for (i = 0; i < 5; i++) {
+            id += possible.charAt(Math.floor(Math.random() * possible.length));
+        }
+
+        return id;
+    }
+    
+    function getNewProjectName(folder, startingOrdinal, depth) {
+        var result = new $.Deferred(),
+            projectFolder = convertUnixPathToWindowsPath(folder),
+            projectName = ExtensionStrings.NEW_PROJECT_BASE_NAME + startingOrdinal.toString(),
+            destination = cannonicalizeDirectoryPath(projectFolder) + projectName;
+       
+        brackets.fs.stat(destination, function (err) {
+            if (err === brackets.fs.ERR_NOT_FOUND) {
+                result.resolve({status: STATUS_SUCCEEDED,
+                                newProjectName: projectName,
+                                ordinal: startingOrdinal});
+            } else if (err !== brackets.fs.ERR_NOT_FOUND && err !== brackets.fs.NO_ERROR) {
+                startingOrdinal = _makeid();
+                result.resolve({status: STATUS_FAILED,
+                                reason: "unknown-error",
+                                newProjectName: ExtensionStrings.NEW_PROJECT_BASE_NAME + startingOrdinal,
+                                ordinal: startingOrdinal});
+            } else if (depth && depth > 100) {
+                startingOrdinal = _makeid();
+                result.resolve({status: STATUS_FAILED,
+                                reason: "max-try-limit-hit",
+                                newProjectName: ExtensionStrings.NEW_PROJECT_BASE_NAME + startingOrdinal,
+                                ordinal: startingOrdinal});
+            } else {
+                getNewProjectName(folder, startingOrdinal + 1, depth ? depth + 1 : 1).done(function (data) {
+                    result.resolve(data);
+                });
+            }
+        });
+        
+        return result;
+    }
+    
     function handleNewProject(commandData) {
         var $dlg,
             $OkBtn,
@@ -352,68 +400,73 @@ define(function (require, exports, module) {
             $projectNameInput,
             $templateSelect,
             newProjectOrdinal = prefs.get("newProjectOrdinal") || 1,
-            defaultProjectName = ExtensionStrings.NEW_PROJECT_BASE_NAME +  newProjectOrdinal.toString(),
-            prefsNewProjectFolder = prefs.get("newProjectsFolder"),
-            newProjectFolder = _documentsDir;
+            newProjectFolder = prefs.get("newProjectsFolder") || _documentsDir;
+
+        getNewProjectName(newProjectFolder, newProjectOrdinal).done(function (data) {
         
-        var context = {
-            Strings: Strings,
-            ExtensionStrings: ExtensionStrings,
-            PROJECT_DIRECTORY: convertUnixPathToWindowsPath(prefsNewProjectFolder || newProjectFolder),
-            NEXT_NEW_PROJECT_NAME: defaultProjectName
-        };
-        
-        var dialog = Dialogs.showModalDialogUsingTemplate(Mustache.render(NewProjectDialogTemplate, context));
-        
-        dialog.done(function (buttonId) {
-            if (buttonId === "ok") {
-                var projectFolder = convertWindowsPathToUnixPath($projectDirectoryInput.val()),
-                    projectName = $projectNameInput.val(),
-                    destination = cannonicalizeDirectoryPath(projectFolder) + ((projectName.length > 0) ? projectName : defaultProjectName),
-                    templateName = $templateSelect.val();
-                
-                
-                getProjectTemplateOptions(templateName).done(function (opts) {
-                    createNewProject(destination, templateName, opts).done(function () {
-                        ProjectManager.openProject(destination).done(function () {
-                            openStarterFile(destination, opts);
+            var defaultProjectName = data.newProjectName;
+
+            var context = {
+                Strings: Strings,
+                ExtensionStrings: ExtensionStrings,
+                PROJECT_DIRECTORY: convertUnixPathToWindowsPath(newProjectFolder),
+                NEXT_NEW_PROJECT_NAME: defaultProjectName
+            };
+
+            var dialog = Dialogs.showModalDialogUsingTemplate(Mustache.render(NewProjectDialogTemplate, context));
+
+            dialog.done(function (buttonId) {
+                if (buttonId === "ok") {
+                    var projectFolder = convertWindowsPathToUnixPath($projectDirectoryInput.val()),
+                        projectName = $projectNameInput.val(),
+                        destination = cannonicalizeDirectoryPath(projectFolder) + ((projectName.length > 0) ? projectName : defaultProjectName),
+                        templateName = $templateSelect.val();
+
+
+                    getProjectTemplateOptions(templateName).done(function (opts) {
+                        createNewProject(destination, templateName, opts).done(function () {
+                            ProjectManager.openProject(destination).done(function () {
+                                openStarterFile(destination, opts);
+                            });
+                            if (projectName === defaultProjectName && data.status === STATUS_SUCCEEDED) {
+                                prefs.set("newProjectOrdinal", ++data.ordinal);
+                            }
                         });
-                        prefs.set("newProjectOrdinal", ++newProjectOrdinal);
                     });
-                });
-            }
-        });
-        
-        $dlg = dialog.getElement();
-        $OkBtn = $dlg.find(".dialog-button[data-button-id='ok']");
-        $changeProjectDirectoryBtn = $("#change-directory", $dlg);
-        $projectDirectoryInput = $("#project-directory", $dlg);
-        $projectNameInput = $("#project-name", $dlg);
-        $templateSelect = $("#project-template", $dlg);
-        
-        $changeProjectDirectoryBtn.click(function (e) {
-            FileSystem.showOpenDialog(false, true, Strings.CHOOSE_FOLDER, newProjectFolder, null,
-                function (error, files) {
-                    if (!error && files && files.length > 0 && files[0].length > 0) {
-                        newProjectFolder = files[0];
-                        $projectDirectoryInput.val(convertUnixPathToWindowsPath(newProjectFolder));
-                        prefs.set("newProjectsFolder", newProjectFolder);
-                    }
-                });
-            
-            e.preventDefault();
-            e.stopPropagation();
-        });
-        
-        $OkBtn.click(function (e) {
-            if (!validateProjectName($projectNameInput.val())) {
+                }
+            });
+
+            $dlg = dialog.getElement();
+            $OkBtn = $dlg.find(".dialog-button[data-button-id='ok']");
+            $changeProjectDirectoryBtn = $("#change-directory", $dlg);
+            $projectDirectoryInput = $("#project-directory", $dlg);
+            $projectNameInput = $("#project-name", $dlg);
+            $templateSelect = $("#project-template", $dlg);
+
+            $changeProjectDirectoryBtn.click(function (e) {
+                FileSystem.showOpenDialog(false, true, Strings.CHOOSE_FOLDER, newProjectFolder, null,
+                    function (error, files) {
+                        if (!error && files && files.length > 0 && files[0].length > 0) {
+                            newProjectFolder = files[0];
+                            $projectDirectoryInput.val(convertUnixPathToWindowsPath(newProjectFolder));
+                            prefs.set("newProjectsFolder", newProjectFolder);
+                        }
+                    });
+
                 e.preventDefault();
                 e.stopPropagation();
-            }
-            
+            });
+
+            $OkBtn.click(function (e) {
+                if (!validateProjectName($projectNameInput.val())) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+
+            });
+
+            initProjectTemplates($templateSelect);
         });
-        
-        initProjectTemplates($templateSelect);
     }
 
     ExtensionUtils.loadStyleSheet(module, "styles/styles.css");
