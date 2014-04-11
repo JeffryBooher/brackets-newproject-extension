@@ -57,17 +57,18 @@ define(function (require, exports, module) {
     
     /** @const {string} Template Config File Name */
     var TEMPLATE_CONFIG_FILENAME        = "template.json",
-        TARGET_INITIAL_FILENAME         = "index.html";
+        TARGET_INITIAL_FILENAME         = "index.html",
+        USER_TEMPLATE_FOLDERNAME        = "BracketsProjectTemplates";
     
-    var prefs = PreferencesManager.getExtensionPrefs(MODULE_NAME);
-    prefs.definePreference("newProjectsFolder", "string", "");
-    prefs.definePreference("newProjectOrdinal", "number", 1);
+    var _id                             = 0;
     
     var _illegalFilenamesRegEx = /^(\.+|com[1-9]|lpt[1-9]|nul|con|prn|aux)$/i;
     
     var _module = module;
     
     var _documentsDir = brackets.app.getUserDocumentsDirectory();
+    
+    var _prefs = PreferencesManager.getExtensionPrefs(MODULE_NAME);
 
     function convertUnixPathToWindowsPath(path) {
         if (brackets.platform === "win") {
@@ -108,6 +109,10 @@ define(function (require, exports, module) {
     
     function getTemplateFilesFolder() {
         return FileUtils.getNativeModuleDirectoryPath(_module) + "/templateFiles";
+    }
+    
+    function getUserTemplateFilesFolder() {
+        return _prefs.get("userTemplatesFolder");
     }
     
     function showProjectErrorMessage(err, folder) {
@@ -228,19 +233,15 @@ define(function (require, exports, module) {
         return promise;
     }
     
-    function computeTemplateFolderLocation(templateName) {
-        return cannonicalizeDirectoryPath(getTemplateFilesFolder()) + templateName;
-    }
-    
-    function copyTemplateFiles(destination, templateName) {
-        return copyDirectory(destination, computeTemplateFolderLocation(templateName));
+    function copyTemplateFiles(destination, templateDetails) {
+        return copyDirectory(destination, templateDetails.dir);
     }
 
-    function createProjectFolder(projectFolder, templateName) {
+    function createProjectFolder(projectFolder, templateDetails) {
         var promise = new $.Deferred();
         brackets.fs.makedir(projectFolder, 777, function (err) {
             if (err === brackets.fs.NO_ERROR) {
-                copyTemplateFiles(projectFolder, templateName)
+                copyTemplateFiles(projectFolder, templateDetails)
                     .done(function (errorCount) {
                         if (errorCount && errorCount > 0) {
                             showProjectErrorMessage(COPY_TEMPLATE_FILES_FAILED, projectFolder);
@@ -263,13 +264,13 @@ define(function (require, exports, module) {
     }
     
     
-    function createNewProject(projectFolder, templateName, opts) {
+    function createNewProject(projectFolder, templateDetails, opts) {
         var parentFolder = getParentDirectory(projectFolder),
             promise = new $.Deferred();
         
         brackets.fs.stat(parentFolder, function (err, stats) {
             if (err === brackets.fs.NO_ERROR && stats.isDirectory()) {
-                createProjectFolder(projectFolder, templateName)
+                createProjectFolder(projectFolder, templateDetails)
                     .done(function () {
                         promise.resolve();
                     })
@@ -301,35 +302,51 @@ define(function (require, exports, module) {
         }
     }
     
-    function addTemplateFromDirectoryEntry($templateSelect, directoryName) {
-        var templatesFilesFolder = getTemplateFilesFolder();
-        
+    function addTemplateFromDirectoryEntry($templateSelect, templateFolder, templateName) {
+        var sourceFolder = cannonicalizeDirectoryPath(templateFolder) + templateName;
         var addTemplateDirectory = function (err, stats) {
             if (stats.isDirectory()) {
-                $templateSelect.append("<option id=\"" + directoryName + "\">" + directoryName + "</option>");
+                $templateSelect.append("<option id=\"Template_" + (_id++).toString() + "\" source=\"" + sourceFolder + "\">" + templateName + "</option>");
             }
         };
-        brackets.fs.stat(cannonicalizeDirectoryPath(templatesFilesFolder) + directoryName, addTemplateDirectory);
+        brackets.fs.stat(sourceFolder, addTemplateDirectory);
     }
     
-    function initProjectTemplates($templateSelect) {
+    function initProjectTemplatesFromFolder($templateSelect, templateFolder) {
         var i,
-            templatesFilesFolder = getTemplateFilesFolder();
-        brackets.fs.readdir(templatesFilesFolder, function (err, fileList) {
+            result = $.Deferred();
+        
+        brackets.fs.readdir(templateFolder, function (err, fileList) {
             if (err === brackets.fs.NO_ERROR) {
                 
                 for (i = 0; i < fileList.length; i++) {
-                    addTemplateFromDirectoryEntry($templateSelect, fileList[i]);
+                    addTemplateFromDirectoryEntry($templateSelect, templateFolder, fileList[i]);
                 }
             }
+            
+            result.resolve();
         });
+        
+        return result;
     }
     
-    function getProjectTemplateOptions(templateName) {
+    function initProjectTemplates($templateSelect) {
+        var result = $.Deferred();
+        initProjectTemplatesFromFolder($templateSelect, getTemplateFilesFolder())
+            .always(function () {
+                initProjectTemplatesFromFolder($templateSelect, getUserTemplateFilesFolder())
+                    .always(function () {
+                        result.resolve();
+                    });
+            });
+        
+        return result;
+    }
+    
+    function getProjectTemplateOptions(templateDetails) {
         var opts = {},
             result = new $.Deferred(),
-            templateFolder = computeTemplateFolderLocation(templateName),
-            templateConfigFilename = cannonicalizeDirectoryPath(templateFolder) + TEMPLATE_CONFIG_FILENAME;
+            templateConfigFilename = cannonicalizeDirectoryPath(templateDetails.dir) + TEMPLATE_CONFIG_FILENAME;
     
         brackets.fs.stat(templateConfigFilename, function (err) {
             if (err !== brackets.fs.NO_ERROR) {
@@ -401,8 +418,9 @@ define(function (require, exports, module) {
             $projectDirectoryInput,
             $projectNameInput,
             $templateSelect,
-            newProjectOrdinal = prefs.get("newProjectOrdinal") || 1,
-            newProjectFolder = prefs.get("newProjectsFolder") || _documentsDir;
+            newProjectOrdinal = _prefs.get("newProjectOrdinal") || 1,
+            newProjectFolder = _prefs.get("newProjectsFolder") || _documentsDir;
+
 
         getNewProjectName(newProjectFolder, newProjectOrdinal).done(function (data) {
         
@@ -415,6 +433,14 @@ define(function (require, exports, module) {
                 NEXT_NEW_PROJECT_NAME: defaultProjectName
             };
 
+            var getSelectedTemplateDetails = function () {
+                var index = $templateSelect[0].selectedIndex,
+                    $el = $templateSelect.children("option").eq(index),
+                    templateDir = $el ? $el.attr("source") || "" : "",
+                    templateName = ($el && $el.length === 1) ? $el[0].innerText || "" : "";
+                return { name: templateName, dir: templateDir };
+            };
+            
             var dialog = Dialogs.showModalDialogUsingTemplate(Mustache.render(NewProjectDialogTemplate, context));
 
             dialog.done(function (buttonId) {
@@ -422,16 +448,15 @@ define(function (require, exports, module) {
                     var projectFolder = convertWindowsPathToUnixPath($projectDirectoryInput.val()),
                         projectName = $projectNameInput.val(),
                         destination = cannonicalizeDirectoryPath(projectFolder) + ((projectName.length > 0) ? projectName : defaultProjectName),
-                        templateName = $templateSelect.val();
-
-
-                    getProjectTemplateOptions(templateName).done(function (opts) {
-                        createNewProject(destination, templateName, opts).done(function () {
+                        templateDetails = getSelectedTemplateDetails();
+                    
+                    getProjectTemplateOptions(templateDetails).done(function (opts) {
+                        createNewProject(destination, templateDetails, opts).done(function () {
                             ProjectManager.openProject(destination).done(function () {
                                 openStarterFile(destination, opts);
                             });
                             if (projectName === defaultProjectName && data.status === STATUS_SUCCEEDED) {
-                                prefs.set("newProjectOrdinal", ++data.ordinal);
+                                _prefs.set("newProjectOrdinal", ++data.ordinal);
                             }
                         });
                     });
@@ -451,7 +476,7 @@ define(function (require, exports, module) {
                         if (!error && files && files.length > 0 && files[0].length > 0) {
                             newProjectFolder = files[0];
                             $projectDirectoryInput.val(convertUnixPathToWindowsPath(newProjectFolder));
-                            prefs.set("newProjectsFolder", newProjectFolder);
+                            _prefs.set("newProjectsFolder", newProjectFolder);
                         }
                     });
 
@@ -469,8 +494,17 @@ define(function (require, exports, module) {
 
             initProjectTemplates($templateSelect);
         });
+        
     }
 
+    function getDefaultTemplateFolder() {
+        return cannonicalizeDirectoryPath(_documentsDir) + USER_TEMPLATE_FOLDERNAME;
+    }
+    
+    _prefs.definePreference("newProjectsFolder", "string", "");
+    _prefs.definePreference("userTemplatesFolder", "string", getDefaultTemplateFolder());
+    _prefs.definePreference("newProjectOrdinal", "number", 1);
+    
     ExtensionUtils.loadStyleSheet(module, "styles/styles.css");
     
     CommandManager.register(ExtensionStrings.MENU_TITLE, FILE_NEW_PROJECT, handleNewProject);
