@@ -57,7 +57,8 @@ define(function (require, exports, module) {
     
     /** @const {string} Template Config File Name */
     var TEMPLATE_CONFIG_FILENAME        = "template.json",
-        TARGET_INITIAL_FILENAME         = "index.html";
+        TARGET_INITIAL_FILENAME         = "index.html",
+        USER_TEMPLATE_FOLDERNAME        = "BracketsProjectTemplates";
     
     var _id                             = 0;
     
@@ -497,7 +498,7 @@ define(function (require, exports, module) {
     }
 
     function getDefaultTemplateFolder() {
-        return cannonicalizeDirectoryPath(_documentsDir) + "BracketsProjectTemplates";
+        return cannonicalizeDirectoryPath(_documentsDir) + USER_TEMPLATE_FOLDERNAME;
     }
     
     _prefs.definePreference("newProjectsFolder", "string", "");
