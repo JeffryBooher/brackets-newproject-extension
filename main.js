@@ -302,25 +302,25 @@ define(function (require, exports, module) {
         }
     }
     
-    function addTemplateFromDirectoryEntry($templateSelect, folder, directoryName) {
-        var target = cannonicalizeDirectoryPath(folder) + directoryName;
+    function addTemplateFromDirectoryEntry($templateSelect, templateFolder, templateName) {
+        var sourceFolder = cannonicalizeDirectoryPath(templateFolder) + templateName;
         var addTemplateDirectory = function (err, stats) {
             if (stats.isDirectory()) {
-                $templateSelect.append("<option id=\"Template_" + (_id++).toString() + "\" target=\"" + target + "\">" + directoryName + "</option>");
+                $templateSelect.append("<option id=\"Template_" + (_id++).toString() + "\" source=\"" + sourceFolder + "\">" + templateName + "</option>");
             }
         };
-        brackets.fs.stat(target, addTemplateDirectory);
+        brackets.fs.stat(sourceFolder, addTemplateDirectory);
     }
     
-    function initProjectTemplatesFromFolder($templateSelect, folder) {
+    function initProjectTemplatesFromFolder($templateSelect, templateFolder) {
         var i,
             result = $.Deferred();
         
-        brackets.fs.readdir(folder, function (err, fileList) {
+        brackets.fs.readdir(templateFolder, function (err, fileList) {
             if (err === brackets.fs.NO_ERROR) {
                 
                 for (i = 0; i < fileList.length; i++) {
-                    addTemplateFromDirectoryEntry($templateSelect, folder, fileList[i]);
+                    addTemplateFromDirectoryEntry($templateSelect, templateFolder, fileList[i]);
                 }
             }
             
@@ -436,7 +436,7 @@ define(function (require, exports, module) {
             var getSelectedTemplateDetails = function () {
                 var index = $templateSelect[0].selectedIndex,
                     $el = $templateSelect.children("option").eq(index),
-                    templateDir = $el ? $el.attr("target") || "" : "",
+                    templateDir = $el ? $el.attr("source") || "" : "",
                     templateName = ($el && $el.length === 1) ? $el[0].innerText || "" : "";
                 return { name: templateName, dir: templateDir };
             };
