@@ -55,11 +55,11 @@ define(function (require, exports, module) {
     var STATUS_SUCCEEDED                = 1,
         STATUS_FAILED                   = 0;
     
-    var _id                             = 0;
-    
     /** @const {string} Template Config File Name */
     var TEMPLATE_CONFIG_FILENAME        = "template.json",
         TARGET_INITIAL_FILENAME         = "index.html";
+    
+    var _id                             = 0;
     
     var _illegalFilenamesRegEx = /^(\.+|com[1-9]|lpt[1-9]|nul|con|prn|aux)$/i;
     
@@ -305,7 +305,7 @@ define(function (require, exports, module) {
         var target = cannonicalizeDirectoryPath(folder) + directoryName;
         var addTemplateDirectory = function (err, stats) {
             if (stats.isDirectory()) {
-                $templateSelect.append("<option id=\"template_" + (++_id).toString() + "\" target=\"" + target + "\">" + directoryName + "</option>");
+                $templateSelect.append("<option id=\"Template_" + (_id++).toString() + "\" target=\"" + target + "\">" + directoryName + "</option>");
             }
         };
         brackets.fs.stat(target, addTemplateDirectory);
@@ -433,8 +433,7 @@ define(function (require, exports, module) {
             };
 
             var getSelectedTemplateDetails = function () {
-                var details,
-                    index = $templateSelect[0].selectedIndex,
+                var index = $templateSelect[0].selectedIndex,
                     $el = $templateSelect.children("option").eq(index),
                     templateDir = $el ? $el.attr("target") || "" : "",
                     templateName = ($el && $el.length === 1) ? $el[0].innerText || "" : "";
