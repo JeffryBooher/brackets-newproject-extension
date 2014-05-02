@@ -176,7 +176,7 @@ define(function (require, exports, module) {
             errorCount = 0,
             promise = new $.Deferred();
         
-        if (!source || !dest) {
+        if (!source || !destination) {
             return promise.resolve(0);
         }
             
