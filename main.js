@@ -175,6 +175,10 @@ define(function (require, exports, module) {
             completeCount = 0,
             errorCount = 0,
             promise = new $.Deferred();
+        
+        if (!source || !dest) {
+            return promise.resolve(0);
+        }
             
         brackets.fs.readdir(source, function (err, fileList) {
             if (err === brackets.fs.NO_ERROR) {
