@@ -160,8 +160,13 @@ define(function (require, exports, module) {
                         promise.reject(err);
                     }
                 });
+            } else if (err == brackets.fs.NO_ERROR) {
+                if (stats.isDirectory()){
+                    promise.reject(brackets.fs.ERR_CANT_WRITE);
+                } else {
+                    promise.reject(brackets.fs.ERR_FILE_EXISTS);
+                }
             } else {
-                // unable to read file
                 promise.reject(err);
             }
         });
