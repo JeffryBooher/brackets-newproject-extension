@@ -40,6 +40,6 @@ define({
     "ERROR_NOT_A_DIRECTORY"             : "Impossibile scrivere su {1} perché non é una cartella valida, é non in linea o non esiste.",
     "ERROR_UNABLE_TO_WRITE_DIRECTORY"   : "impossibile scrivere su {1} (Errore {0})",
     "INVALID_PROJECT_NAME"              : "Nome del progetto invalido",
-    "INVALID_PROJECT_NAME_MESSAGE"      : "Project names cannot contain the following characters: /?*:;{}<>\\| or use any system reserved words.",
-    "ONE_OR_MORE_TEMPLATE_FILES_FAILED" : "Unable to copy all template files to the destination folder. One or more copy operations failed."
+    "INVALID_PROJECT_NAME_MESSAGE"      : "Il nome del progetto non può contenere i seguenti caratteri: /?*:;{}<>\\| or use any system reserved words.",
+    "ONE_OR_MORE_TEMPLATE_FILES_FAILED" : "Impossibile copiare tutti i file di modello nella cartella di destinazione. Uno o più operazioni di copia é fallito."
 });
