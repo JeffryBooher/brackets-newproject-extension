@@ -6,6 +6,11 @@
     "version": "0.4.8",
     "author": "Jeffry Booher|jsbooher@adobe.com (http://www.facebook.com/JeffryBooher)",
     "license": "MIT",
+    i18n: [
+        "en", 
+        "fr",
+        "de"
+    ],
     "engines": {
         "brackets": ">=0.34.0"
     }
