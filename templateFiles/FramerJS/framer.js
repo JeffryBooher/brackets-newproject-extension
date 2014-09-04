@@ -1,7 +1,7 @@
-// Framer 2.0-20-g9bd31bf (c) 2013 Koen Bok
+// Framer 2.0-45-g7942d46 (c) 2013 Koen Bok
 // https://github.com/koenbok/Framer
 
-window.FramerVersion = "2.0-20-g9bd31bf";
+window.FramerVersion = "2.0-45-g7942d46";
 
 
 (function(){var require = function (file, cwd) {
@@ -567,6 +567,18 @@ require.define("/src/utils.coffee",function(require,module,exports,__dirname,__f
     return Math.round(value * d) / d;
   };
 
+  exports.defaults = function(obj, defaults) {
+    var k, result, v, _ref;
+    result = _.extend(obj);
+    for (k in defaults) {
+      v = defaults[k];
+      if ((_ref = result[k]) === null || _ref === (void 0)) {
+        result[k] = defaults[k];
+      }
+    }
+    return result;
+  };
+
   exports.randomColor = function(alpha) {
     var c;
     if (alpha == null) {
@@ -623,6 +635,10 @@ require.define("/src/utils.coffee",function(require,module,exports,__dirname,__f
 
   exports.isMobile = function() {
     return /iphone|ipod|android|ie|blackberry|fennec/.test(navigator.userAgent.toLowerCase());
+  };
+
+  exports.isChrome = function() {
+    return /chrome/.test(navigator.userAgent.toLowerCase());
   };
 
   exports.isLocal = function() {
@@ -828,7 +844,7 @@ require.define("/src/utils.coffee",function(require,module,exports,__dirname,__f
 require.define("/node_modules/underscore/package.json",function(require,module,exports,__dirname,__filename,process,global){module.exports = {"main":"underscore.js"}
 });
 
-require.define("/node_modules/underscore/underscore.js",function(require,module,exports,__dirname,__filename,process,global){//     Underscore.js 1.5.1
+require.define("/node_modules/underscore/underscore.js",function(require,module,exports,__dirname,__filename,process,global){//     Underscore.js 1.5.2
 //     http://underscorejs.org
 //     (c) 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 //     Underscore may be freely distributed under the MIT license.
@@ -838,7 +854,7 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
   // Baseline setup
   // --------------
 
-  // Establish the root object, `window` in the browser, or `global` on the server.
+  // Establish the root object, `window` in the browser, or `exports` on the server.
   var root = this;
 
   // Save the previous value of the `_` variable.
@@ -895,7 +911,7 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
   }
 
   // Current version.
-  _.VERSION = '1.5.1';
+  _.VERSION = '1.5.2';
 
   // Collection Functions
   // --------------------
@@ -908,14 +924,13 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
     if (nativeForEach && obj.forEach === nativeForEach) {
       obj.forEach(iterator, context);
     } else if (obj.length === +obj.length) {
-      for (var i = 0, l = obj.length; i < l; i++) {
+      for (var i = 0, length = obj.length; i < length; i++) {
         if (iterator.call(context, obj[i], i, obj) === breaker) return;
       }
     } else {
-      for (var key in obj) {
-        if (_.has(obj, key)) {
-          if (iterator.call(context, obj[key], key, obj) === breaker) return;
-        }
+      var keys = _.keys(obj);
+      for (var i = 0, length = keys.length; i < length; i++) {
+        if (iterator.call(context, obj[keys[i]], keys[i], obj) === breaker) return;
       }
     }
   };
@@ -1114,7 +1129,8 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
     return result.value;
   };
 
-  // Shuffle an array.
+  // Shuffle an array, using the modern version of the 
+  // [Fisher-Yates shuffle](http://en.wikipedia.org/wiki/Fisher–Yates_shuffle).
   _.shuffle = function(obj) {
     var rand;
     var index = 0;
@@ -1127,6 +1143,16 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
     return shuffled;
   };
 
+  // Sample **n** random values from an array.
+  // If **n** is not specified, returns a single random element from the array.
+  // The internal `guard` argument allows it to work with `map`.
+  _.sample = function(obj, n, guard) {
+    if (arguments.length < 2 || guard) {
+      return obj[_.random(obj.length - 1)];
+    }
+    return _.shuffle(obj).slice(0, Math.max(0, n));
+  };
+
   // An internal function to generate lookup iterators.
   var lookupIterator = function(value) {
     return _.isFunction(value) ? value : function(obj){ return obj[value]; };
@@ -1137,9 +1163,9 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
     var iterator = lookupIterator(value);
     return _.pluck(_.map(obj, function(value, index, list) {
       return {
-        value : value,
-        index : index,
-        criteria : iterator.call(context, value, index, list)
+        value: value,
+        index: index,
+        criteria: iterator.call(context, value, index, list)
       };
     }).sort(function(left, right) {
       var a = left.criteria;
@@ -1148,38 +1174,41 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
         if (a > b || a === void 0) return 1;
         if (a < b || b === void 0) return -1;
       }
-      return left.index < right.index ? -1 : 1;
+      return left.index - right.index;
     }), 'value');
   };
 
   // An internal function used for aggregate "group by" operations.
-  var group = function(obj, value, context, behavior) {
-    var result = {};
-    var iterator = lookupIterator(value == null ? _.identity : value);
-    each(obj, function(value, index) {
-      var key = iterator.call(context, value, index, obj);
-      behavior(result, key, value);
-    });
-    return result;
+  var group = function(behavior) {
+    return function(obj, value, context) {
+      var result = {};
+      var iterator = value == null ? _.identity : lookupIterator(value);
+      each(obj, function(value, index) {
+        var key = iterator.call(context, value, index, obj);
+        behavior(result, key, value);
+      });
+      return result;
+    };
   };
 
   // Groups the object's values by a criterion. Pass either a string attribute
   // to group by, or a function that returns the criterion.
-  _.groupBy = function(obj, value, context) {
-    return group(obj, value, context, function(result, key, value) {
-      (_.has(result, key) ? result[key] : (result[key] = [])).push(value);
-    });
-  };
+  _.groupBy = group(function(result, key, value) {
+    (_.has(result, key) ? result[key] : (result[key] = [])).push(value);
+  });
+
+  // Indexes the object's values by a criterion, similar to `groupBy`, but for
+  // when you know that your index values will be unique.
+  _.indexBy = group(function(result, key, value) {
+    result[key] = value;
+  });
 
   // Counts instances of an object that group by a certain criterion. Pass
   // either a string attribute to count by, or a function that returns the
   // criterion.
-  _.countBy = function(obj, value, context) {
-    return group(obj, value, context, function(result, key) {
-      if (!_.has(result, key)) result[key] = 0;
-      result[key]++;
-    });
-  };
+  _.countBy = group(function(result, key) {
+    _.has(result, key) ? result[key]++ : result[key] = 1;
+  });
 
   // Use a comparator function to figure out the smallest index at which
   // an object should be inserted so as to maintain order. Uses binary search.
@@ -1216,7 +1245,7 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
   // allows it to work with `_.map`.
   _.first = _.head = _.take = function(array, n, guard) {
     if (array == null) return void 0;
-    return (n != null) && !guard ? slice.call(array, 0, n) : array[0];
+    return (n == null) || guard ? array[0] : slice.call(array, 0, n);
   };
 
   // Returns everything but the last entry of the array. Especially useful on
@@ -1231,10 +1260,10 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
   // values in the array. The **guard** check allows it to work with `_.map`.
   _.last = function(array, n, guard) {
     if (array == null) return void 0;
-    if ((n != null) && !guard) {
-      return slice.call(array, Math.max(array.length - n, 0));
-    } else {
+    if ((n == null) || guard) {
       return array[array.length - 1];
+    } else {
+      return slice.call(array, Math.max(array.length - n, 0));
     }
   };
 
@@ -1266,7 +1295,7 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
     return output;
   };
 
-  // Return a completely flattened version of an array.
+  // Flatten out an array, either recursively (by default), or just one level.
   _.flatten = function(array, shallow) {
     return flatten(array, shallow, []);
   };
@@ -1338,7 +1367,7 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
   _.object = function(list, values) {
     if (list == null) return {};
     var result = {};
-    for (var i = 0, l = list.length; i < l; i++) {
+    for (var i = 0, length = list.length; i < length; i++) {
       if (values) {
         result[list[i]] = values[i];
       } else {
@@ -1356,17 +1385,17 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
   // for **isSorted** to use binary search.
   _.indexOf = function(array, item, isSorted) {
     if (array == null) return -1;
-    var i = 0, l = array.length;
+    var i = 0, length = array.length;
     if (isSorted) {
       if (typeof isSorted == 'number') {
-        i = (isSorted < 0 ? Math.max(0, l + isSorted) : isSorted);
+        i = (isSorted < 0 ? Math.max(0, length + isSorted) : isSorted);
       } else {
         i = _.sortedIndex(array, item);
         return array[i] === item ? i : -1;
       }
     }
     if (nativeIndexOf && array.indexOf === nativeIndexOf) return array.indexOf(item, isSorted);
-    for (; i < l; i++) if (array[i] === item) return i;
+    for (; i < length; i++) if (array[i] === item) return i;
     return -1;
   };
 
@@ -1392,11 +1421,11 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
     }
     step = arguments[2] || 1;
 
-    var len = Math.max(Math.ceil((stop - start) / step), 0);
+    var length = Math.max(Math.ceil((stop - start) / step), 0);
     var idx = 0;
-    var range = new Array(len);
+    var range = new Array(length);
 
-    while(idx < len) {
+    while(idx < length) {
       range[idx++] = start;
       start += step;
     }
@@ -1508,17 +1537,24 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
   // N milliseconds. If `immediate` is passed, trigger the function on the
   // leading edge, instead of the trailing.
   _.debounce = function(func, wait, immediate) {
-    var result;
-    var timeout = null;
+    var timeout, args, context, timestamp, result;
     return function() {
-      var context = this, args = arguments;
+      context = this;
+      args = arguments;
+      timestamp = new Date();
       var later = function() {
-        timeout = null;
-        if (!immediate) result = func.apply(context, args);
+        var last = (new Date()) - timestamp;
+        if (last < wait) {
+          timeout = setTimeout(later, wait - last);
+        } else {
+          timeout = null;
+          if (!immediate) result = func.apply(context, args);
+        }
       };
       var callNow = immediate && !timeout;
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
+      if (!timeout) {
+        timeout = setTimeout(later, wait);
+      }
       if (callNow) result = func.apply(context, args);
       return result;
     };
@@ -1584,22 +1620,33 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
 
   // Retrieve the values of an object's properties.
   _.values = function(obj) {
-    var values = [];
-    for (var key in obj) if (_.has(obj, key)) values.push(obj[key]);
+    var keys = _.keys(obj);
+    var length = keys.length;
+    var values = new Array(length);
+    for (var i = 0; i < length; i++) {
+      values[i] = obj[keys[i]];
+    }
     return values;
   };
 
   // Convert an object into a list of `[key, value]` pairs.
   _.pairs = function(obj) {
-    var pairs = [];
-    for (var key in obj) if (_.has(obj, key)) pairs.push([key, obj[key]]);
+    var keys = _.keys(obj);
+    var length = keys.length;
+    var pairs = new Array(length);
+    for (var i = 0; i < length; i++) {
+      pairs[i] = [keys[i], obj[keys[i]]];
+    }
     return pairs;
   };
 
   // Invert the keys and values of an object. The values must be serializable.
   _.invert = function(obj) {
     var result = {};
-    for (var key in obj) if (_.has(obj, key)) result[obj[key]] = key;
+    var keys = _.keys(obj);
+    for (var i = 0, length = keys.length; i < length; i++) {
+      result[obj[keys[i]]] = keys[i];
+    }
     return result;
   };
 
@@ -1883,8 +1930,7 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
       '<': '&lt;',
       '>': '&gt;',
       '"': '&quot;',
-      "'": '&#x27;',
-      '/': '&#x2F;'
+      "'": '&#x27;'
     }
   };
   entityMap.unescape = _.invert(entityMap.escape);
@@ -1915,7 +1961,7 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
 
   // Add your own custom functions to the Underscore object.
   _.mixin = function(obj) {
-    each(_.functions(obj), function(name){
+    each(_.functions(obj), function(name) {
       var func = _[name] = obj[name];
       _.prototype[name] = function() {
         var args = [this._wrapped];
@@ -2277,7 +2323,7 @@ require.define("/src/tools/facebook.coffee",function(require,module,exports,__di
 });
 
 require.define("/src/views/view.coffee",function(require,module,exports,__dirname,__filename,process,global){(function() {
-  var Animation, EventEmitter, Frame, Matrix, View, check, utils, _,
+  var Animation, EventEmitter, FilterProperties, Frame, Matrix, View, check, k, utils, v, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
@@ -2297,9 +2343,13 @@ require.define("/src/views/view.coffee",function(require,module,exports,__dirnam
 
   Animation = require("../animation").Animation;
 
+  FilterProperties = require("../filters").FilterProperties;
+
   exports.ViewList = [];
 
   View = (function(_super) {
+    var _this = this;
+
     __extends(View, _super);
 
     function View(args) {
@@ -2353,7 +2403,7 @@ require.define("/src/views/view.coffee",function(require,module,exports,__dirnam
         return p;
       },
       set: function(args) {
-        var key, value, _ref, _ref1, _ref2, _ref3, _results;
+        var key, value, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _results;
         _ref = View.Properties;
         for (key in _ref) {
           value = _ref[key];
@@ -2361,11 +2411,20 @@ require.define("/src/views/view.coffee",function(require,module,exports,__dirnam
             this[key] = args[key];
           }
         }
-        _ref2 = Frame.CalculatedProperties;
-        _results = [];
+        _ref2 = Frame.Properties;
         for (key in _ref2) {
           value = _ref2[key];
           if ((_ref3 = args[key]) !== null && _ref3 !== (void 0)) {
+            this[key] = args[key];
+          } else {
+            this[key] = Frame.Properties[key];
+          }
+        }
+        _ref4 = Frame.CalculatedProperties;
+        _results = [];
+        for (key in _ref4) {
+          value = _ref4[key];
+          if ((_ref5 = args[key]) !== null && _ref5 !== (void 0)) {
             _results.push(this[key] = args[key]);
           } else {
             _results.push(void 0);
@@ -2650,7 +2709,8 @@ require.define("/src/views/view.coffee",function(require,module,exports,__dirnam
 
     View.define("visible", {
       get: function() {
-        return this._visible || true;
+        var _ref;
+        return (_ref = this._visible) != null ? _ref : true;
       },
       set: function(value) {
         this._visible = value;
@@ -2662,6 +2722,65 @@ require.define("/src/views/view.coffee",function(require,module,exports,__dirnam
         }
         return this.emit("change:visible");
       }
+    });
+
+    View.prototype._getFilterValue = function(name) {
+      var values;
+      values = this._parseFilterCSS(this.style.webkitFilter);
+      return values[name] || FilterProperties[name]["default"];
+    };
+
+    View.prototype._setFilterValue = function(name, value, unit) {
+      var values;
+      values = this._parseFilterCSS(this.style.webkitFilter);
+      values[name] = value;
+      return this.style.webkitFilter = this._filterCSS(values);
+    };
+
+    View.prototype._filterCSS = function(filterValues) {
+      var css, k, v;
+      css = [];
+      for (k in filterValues) {
+        v = filterValues[k];
+        if (FilterProperties.hasOwnProperty(k)) {
+          css.push("" + FilterProperties[k].css + "(" + v + FilterProperties[k].unit + ")");
+        }
+      }
+      return css.join(" ");
+    };
+
+    View.prototype._parseFilterCSS = function(css) {
+      var k, name, part, results, v, value, _i, _len, _ref;
+      results = {};
+      if (!css) {
+        return results;
+      }
+      _ref = css.split(" ");
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        part = _ref[_i];
+        if (part) {
+          name = part.split("(")[0];
+          value = parseFloat(part.split("(")[1]);
+          for (k in FilterProperties) {
+            v = FilterProperties[k];
+            if (v.css === name) {
+              results[k] = value;
+            }
+          }
+        }
+      }
+      return results;
+    };
+
+    _.map(FilterProperties, function(filterUnit, filterName) {
+      return View.define(filterName, {
+        get: function() {
+          return this._getFilterValue(filterName);
+        },
+        set: function(value) {
+          return this._setFilterValue(filterName, value);
+        }
+      });
     });
 
     View.define("superView", {
@@ -2885,9 +3004,9 @@ require.define("/src/views/view.coffee",function(require,module,exports,__dirnam
 
     return View;
 
-  })(Frame);
+  }).call(this, Frame);
 
-  View.Properties = utils.extend(Frame.Properties, {
+  View.Properties = utils.extend({}, Frame.Properties, {
     frame: null,
     clip: true,
     opacity: 1.0,
@@ -2906,6 +3025,11 @@ require.define("/src/views/view.coffee",function(require,module,exports,__dirnam
     visible: true,
     index: 0
   });
+
+  for (k in FilterProperties) {
+    v = FilterProperties[k];
+    View.Properties[k] = v["default"];
+  }
 
   View.Views = [];
 
@@ -2941,6 +3065,8 @@ require.define("/node_modules/check-types/src/check-types.js",function(require,m
         isLength: isLength,
         verifyArray: verifyArray,
         isArray: isArray,
+        verifyDate: verifyDate,
+        isDate: isDate,
         verifyFunction: verifyFunction,
         isFunction: isFunction,
         verifyUnemptyString: verifyUnemptyString,
@@ -2976,8 +3102,12 @@ require.define("/node_modules/check-types/src/check-types.js",function(require,m
      *                           to set on the thrown Error.
      */
     function verifyQuack (thing, duck, message) {
-        if (quacksLike(thing, duck) === false) {
-            throw new Error(message || 'Invalid type');
+        verify(quacksLike, [ thing, duck ], message, 'Invalid type');
+    }
+
+    function verify (fn, args, message, defaultMessage) {
+        if (fn.apply(null, args) === false) {
+            throw new Error(message || defaultMessage);
         }
     }
 
@@ -3029,9 +3159,7 @@ require.define("/node_modules/check-types/src/check-types.js",function(require,m
      *                             to set on the thrown Error.
      */
     function verifyInstance (thing, prototype, message) {
-        if (isInstance(thing, prototype) === false) {
-            throw new Error(message || 'Invalid type');
-        }
+        verify(isInstance, [ thing, prototype ], message, 'Invalid type');
     }
 
     /**
@@ -3067,9 +3195,7 @@ require.define("/node_modules/check-types/src/check-types.js",function(require,m
      *                           to set on the thrown Error.
      */
     function verifyEmptyObject (thing, message) {
-        if (isEmptyObject(thing) === false) {
-            throw new Error(message || 'Invalid empty object');
-        }
+        verify(isEmptyObject, [ thing ], message, 'Invalid object');
     }
 
     /**
@@ -3099,28 +3225,26 @@ require.define("/node_modules/check-types/src/check-types.js",function(require,m
      * Public function `verifyObject`.
      *
      * Throws an exception unless something is a non-null,
-     * non-array object.
+     * non-array, non-date object.
      *
      * @param thing              The thing to test.
      * @param [message] {string} An optional error message
      *                           to set on the thrown Error.
      */
     function verifyObject (thing, message) {
-        if (isObject(thing) === false) {
-            throw new Error(message || 'Invalid object');
-        }
+        verify(isObject, [ thing ], message, 'Invalid object');
     }
 
     /**
      * Public function `isObject`.
      *
-     * Returns `true` if something is a non-null, non-array
-     * object, `false` otherwise.
+     * Returns `true` if something is a non-null, non-array,
+     * non-date object, `false` otherwise.
      *
      * @param thing          The thing to test.
      */
     function isObject (thing) {
-        return typeof thing === 'object' && thing !== null && isArray(thing) === false;
+        return typeof thing === 'object' && thing !== null && isArray(thing) === false && isDate(thing) === false;
     }
 
     /**
@@ -3134,9 +3258,7 @@ require.define("/node_modules/check-types/src/check-types.js",function(require,m
      *                           to set on the thrown Error.
      */
     function verifyLength (thing, length, message) {
-        if (isLength(thing, length) === false) {
-            throw new Error(message || 'Invalid length');
-        }
+        verify(isLength, [ thing, length ], message, 'Invalid length');
     }
 
     /**
@@ -3162,9 +3284,7 @@ require.define("/node_modules/check-types/src/check-types.js",function(require,m
      *                           to set on the thrown Error.
      */
     function verifyArray (thing, message) {
-        if (isArray(thing) === false) {
-            throw new Error(message || 'Invalid array');
-        }
+        verify(isArray, [ thing ], message, 'Invalid array');
     }
 
     /**
@@ -3175,7 +3295,35 @@ require.define("/node_modules/check-types/src/check-types.js",function(require,m
      * @param thing          The thing to test.
      */
     function isArray (thing) {
+        if (Array.isArray) {
+            return Array.isArray(thing);
+        }
+
         return Object.prototype.toString.call(thing) === '[object Array]';
+    }
+
+    /**
+     * Public function `verifyDate`.
+     *
+     * Throws an exception unless something is a date.
+     *
+     * @param thing              The thing to test.
+     * @param [message] {string} An optional error message
+     *                           to set on the thrown Error.
+     */
+    function verifyDate (thing, message) {
+        verify(isDate, [ thing ], message, 'Invalid date');
+    }
+
+    /**
+     * Public function `isDate`.
+     *
+     * Returns `true` something is a date, `false` otherwise.
+     *
+     * @param thing          The thing to test.
+     */
+    function isDate (thing) {
+        return Object.prototype.toString.call(thing) === '[object Date]';
     }
 
     /**
@@ -3188,9 +3336,7 @@ require.define("/node_modules/check-types/src/check-types.js",function(require,m
      *                           to set on the thrown Error.
      */
     function verifyFunction (thing, message) {
-        if (isFunction(thing) === false) {
-            throw new Error(message || 'Invalid function');
-        }
+        verify(isFunction, [ thing ], message, 'Invalid function');
     }
 
     /**
@@ -3214,9 +3360,7 @@ require.define("/node_modules/check-types/src/check-types.js",function(require,m
      *                           to set on the thrown Error.
      */
     function verifyUnemptyString (thing, message) {
-        if (isUnemptyString(thing) === false) {
-            throw new Error(message || 'Invalid string');
-        }
+        verify(isUnemptyString, [ thing ], message, 'Invalid string');
     }
 
     /**
@@ -3241,9 +3385,7 @@ require.define("/node_modules/check-types/src/check-types.js",function(require,m
      *                           to set on the thrown Error.
      */
     function verifyString (thing, message) {
-        if (isString(thing) === false) {
-            throw new Error(message || 'Invalid string');
-        }
+        verify(isString, [ thing ], message, 'Invalid string');
     }
 
     /**
@@ -3267,9 +3409,7 @@ require.define("/node_modules/check-types/src/check-types.js",function(require,m
      *                           to set on the thrown Error.
      */
     function verifyOddNumber (thing, message) {
-        if (isOddNumber(thing) === false) {
-            throw new Error(message || 'Invalid number');
-        }
+        verify(isOddNumber, [ thing ], message, 'Invalid number');
     }
 
     /**
@@ -3294,9 +3434,7 @@ require.define("/node_modules/check-types/src/check-types.js",function(require,m
      *                           to set on the thrown Error.
      */
     function verifyEvenNumber (thing, message) {
-        if (isEvenNumber(thing) === false) {
-            throw new Error(message || 'Invalid number');
-        }
+        verify(isEvenNumber, [ thing ], message, 'Invalid number');
     }
 
     /**
@@ -3321,9 +3459,7 @@ require.define("/node_modules/check-types/src/check-types.js",function(require,m
      *                           to set on the thrown Error.
      */
     function verifyPositiveNumber (thing, message) {
-        if (isPositiveNumber(thing) === false) {
-            throw new Error(message || 'Invalid number');
-        }
+        verify(isPositiveNumber, [ thing ], message, 'Invalid number');
     }
 
     /**
@@ -3348,9 +3484,7 @@ require.define("/node_modules/check-types/src/check-types.js",function(require,m
      *                           to set on the thrown Error.
      */
     function verifyNegativeNumber (thing, message) {
-        if (isNegativeNumber(thing) === false) {
-            throw new Error(message || 'Invalid number');
-        }
+        verify(isNegativeNumber, [ thing ], message, 'Invalid number');
     }
 
     /**
@@ -3375,9 +3509,7 @@ require.define("/node_modules/check-types/src/check-types.js",function(require,m
      *                           to set on the thrown Error.
      */
     function verifyNumber (thing, message) {
-        if (isNumber(thing) === false) {
-            throw new Error(message || 'Invalid number');
-        }
+        verify(isNumber, [ thing ], message, 'Invalid number');
     }
 
     /**
@@ -3529,13 +3661,15 @@ require.define("/src/primitives/frame.coffee",function(require,module,exports,__
     });
 
     Frame.prototype.merge = function(r2) {
-      var frame, r1;
+      var frame, r1, xmin, ymin;
       r1 = this;
+      xmin = Math.min(r1.x, r2.x);
+      ymin = Math.min(r1.y, r2.y);
       frame = {
-        x: Math.min(r1.x, r2.x),
-        y: Math.min(r1.y, r2.y),
-        width: Math.max(r1.width, r2.width),
-        height: Math.max(r1.height, r2.height)
+        x: xmin,
+        y: ymin,
+        width: Math.max(r1.x + r1.width, r2.x + r2.width) - xmin,
+        height: Math.max(r1.y + r1.height, r2.y + r2.height) - ymin
       };
       return new Frame(frame);
     };
@@ -3847,7 +3981,7 @@ require.define("/src/primitives/matrix.coffee",function(require,module,exports,_
 });
 
 require.define("/src/animation.coffee",function(require,module,exports,__dirname,__filename,process,global){(function() {
-  var Animation, AnimationCounter, AnimationList, EventEmitter, Matrix, bezier, config, css, parseCurve, spring, utils, _,
+  var AnimatableFilterProperties, Animation, AnimationCounter, AnimationList, EventEmitter, FilterProperties, Matrix, bezier, config, css, k, parseCurve, spring, utils, v, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -3863,6 +3997,8 @@ require.define("/src/animation.coffee",function(require,module,exports,__dirname
   EventEmitter = require("./eventemitter").EventEmitter;
 
   Matrix = require("./primitives/matrix").Matrix;
+
+  FilterProperties = require("./filters").FilterProperties;
 
   spring = require("./curves/spring");
 
@@ -3883,6 +4019,13 @@ require.define("/src/animation.coffee",function(require,module,exports,__dirname
     });
   };
 
+  AnimatableFilterProperties = {};
+
+  for (k in FilterProperties) {
+    v = FilterProperties[k];
+    AnimatableFilterProperties[k] = v.unit;
+  }
+
   Animation = (function(_super) {
     __extends(Animation, _super);
 
@@ -3893,6 +4036,8 @@ require.define("/src/animation.coffee",function(require,module,exports,__dirname
       width: "px",
       height: "px"
     };
+
+    Animation.prototype.AnimatableFilterProperties = AnimatableFilterProperties;
 
     Animation.prototype.AnimatableMatrixProperties = ["x", "y", "z", "scaleX", "scaleY", "scaleZ", "rotationX", "rotationY", "rotationZ"];
 
@@ -3942,7 +4087,7 @@ require.define("/src/animation.coffee",function(require,module,exports,__dirname
     });
 
     Animation.prototype.start = function(callback) {
-      var animatedProperties, backsideVisibility, k, propertiesA, propertiesB, startTime, v, _i, _len, _ref, _ref1,
+      var animatedProperties, backsideVisibility, propertiesA, propertiesB, startTime, _i, _len, _ref, _ref1, _ref2,
         _this = this;
       AnimationList.push(this);
       if (this.view === null) {
@@ -3966,11 +4111,11 @@ require.define("/src/animation.coffee",function(require,module,exports,__dirname
       this.totalTime = (this.curveValues.length / this.precision) * 1000;
       propertiesA = this.view.properties;
       propertiesB = this.properties;
-      if (propertiesB.scale) {
+      if (propertiesB.hasOwnProperty("scale")) {
         propertiesB.scaleX = propertiesB.scale;
         propertiesB.scaleY = propertiesB.scale;
       }
-      if (propertiesB.rotation) {
+      if (propertiesB.hasOwnProperty("rotation")) {
         propertiesB.rotationZ = propertiesB.rotation;
       }
       this.propertiesA = {};
@@ -3989,6 +4134,17 @@ require.define("/src/animation.coffee",function(require,module,exports,__dirname
       for (k in _ref1) {
         v = _ref1[k];
         if (propertiesB.hasOwnProperty(k)) {
+          this.propertiesA[k] = propertiesA[k];
+          this.propertiesB[k] = propertiesB[k];
+        }
+      }
+      _ref2 = this.AnimatableFilterProperties;
+      for (k in _ref2) {
+        v = _ref2[k];
+        if (propertiesB.hasOwnProperty(k)) {
+          if (utils.isChrome()) {
+            console.log("Warning: Filter animations are currently not working well in Chrome");
+          }
           this.propertiesA[k] = propertiesA[k];
           this.propertiesB[k] = propertiesB[k];
         }
@@ -4032,7 +4188,7 @@ require.define("/src/animation.coffee",function(require,module,exports,__dirname
     };
 
     Animation.prototype.reverse = function() {
-      var k, options, p, v, _i, _len, _ref, _ref1;
+      var options, p, _i, _len, _ref, _ref1;
       options = {};
       _ref = this.AnimationProperties;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -4043,7 +4199,9 @@ require.define("/src/animation.coffee",function(require,module,exports,__dirname
       _ref1 = this._originalProperties;
       for (k in _ref1) {
         v = _ref1[k];
-        options.properties[k] = this._originalProperties[k];
+        if (this.properties.hasOwnProperty(k)) {
+          options.properties[k] = this._originalProperties[k];
+        }
       }
       return new Animation(options);
     };
@@ -4064,7 +4222,7 @@ require.define("/src/animation.coffee",function(require,module,exports,__dirname
     };
 
     Animation.prototype._cleanup = function(completed) {
-      var computedStyles, endMatrix, endStyles, k, v, _ref, _ref1;
+      var computedStyles, cssFilterProperties, endMatrix, endStyles, _ref, _ref1, _ref2;
       this.view._currentAnimations = _.without(this.view._currentAnimations, this);
       if (completed) {
         endMatrix = utils.extend(new Matrix(), this.propertiesB);
@@ -4074,15 +4232,25 @@ require.define("/src/animation.coffee",function(require,module,exports,__dirname
           v = _ref[k];
           endStyles[k] = this.propertiesB[k] + v;
         }
+        cssFilterProperties = {};
+        _ref1 = this.propertiesB;
+        for (k in _ref1) {
+          v = _ref1[k];
+          if (FilterProperties.hasOwnProperty(k)) {
+            cssFilterProperties[FilterProperties[k].css] = v;
+          }
+        }
+        endStyles["webkitFilter"] = this.view._filterCSS(cssFilterProperties);
       } else {
         endMatrix = new Matrix(this.view._computedMatrix());
         endStyles = {};
         computedStyles = this.view.computedStyle;
-        _ref1 = this.AnimatableCSSProperties;
-        for (k in _ref1) {
-          v = _ref1[k];
+        _ref2 = this.AnimatableCSSProperties;
+        for (k in _ref2) {
+          v = _ref2[k];
           endStyles[k] = computedStyles[k];
         }
+        endStyles.webkitFilter = computedStyles.webkitFilter;
       }
       this.view.removeClass(this.animationName);
       this.view._matrix = endMatrix;
@@ -4115,17 +4283,28 @@ require.define("/src/animation.coffee",function(require,module,exports,__dirname
     };
 
     Animation.prototype._css = function() {
-      var cssString, keyFrames, matrix, position, propertyName, unit, values, _i, _len, _ref, _ref1;
+      var cssString, keyFrames, matrix, position, propertyName, unit, values, _i, _len, _ref, _ref1, _ref2;
       keyFrames = this._keyFrames();
       cssString = [];
       cssString.push("@-webkit-keyframes " + this.animationName + " {\n");
       matrix = new Matrix();
       for (position in keyFrames) {
         values = keyFrames[position];
-        cssString.push("\t" + position + "%\t{ -webkit-transform: ");
-        _ref = this.AnimatableMatrixProperties;
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          propertyName = _ref[_i];
+        cssString.push("\t" + position + "%\t{");
+        cssString.push("-webkit-filter: ");
+        _ref = this.AnimatableFilterProperties;
+        for (propertyName in _ref) {
+          unit = _ref[propertyName];
+          if (!values.hasOwnProperty(propertyName)) {
+            continue;
+          }
+          cssString.push("" + FilterProperties[propertyName].css + "(" + (utils.round(values[propertyName], config.roundingDecimals)) + unit + ") ");
+        }
+        cssString.push(";");
+        cssString.push("-webkit-transform: ");
+        _ref1 = this.AnimatableMatrixProperties;
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          propertyName = _ref1[_i];
           if (values.hasOwnProperty(propertyName)) {
             matrix[propertyName] = values[propertyName];
           } else {
@@ -4133,9 +4312,9 @@ require.define("/src/animation.coffee",function(require,module,exports,__dirname
           }
         }
         cssString.push(matrix.css() + "; ");
-        _ref1 = this.AnimatableCSSProperties;
-        for (propertyName in _ref1) {
-          unit = _ref1[propertyName];
+        _ref2 = this.AnimatableCSSProperties;
+        for (propertyName in _ref2) {
+          unit = _ref2[propertyName];
           if (!values.hasOwnProperty(propertyName)) {
             continue;
           }
@@ -4148,7 +4327,7 @@ require.define("/src/animation.coffee",function(require,module,exports,__dirname
     };
 
     Animation.prototype._deltas = function() {
-      var deltas, k;
+      var deltas;
       deltas = {};
       for (k in this.propertiesA) {
         deltas[k] = (this.propertiesB[k] - this.propertiesA[k]) / 100.0;
@@ -4157,7 +4336,7 @@ require.define("/src/animation.coffee",function(require,module,exports,__dirname
     };
 
     Animation.prototype._parseCurve = function(curve) {
-      var factor, precision, time, v;
+      var factor, precision, time;
       if (curve == null) {
         curve = "";
       }
@@ -4192,6 +4371,54 @@ require.define("/src/animation.coffee",function(require,module,exports,__dirname
   })(EventEmitter);
 
   exports.Animation = Animation;
+
+}).call(this);
+
+});
+
+require.define("/src/filters.coffee",function(require,module,exports,__dirname,__filename,process,global){(function() {
+  exports.FilterProperties = {
+    "blur": {
+      unit: "px",
+      "default": 0,
+      css: "blur"
+    },
+    "brightness": {
+      unit: "%",
+      "default": 100,
+      css: "brightness"
+    },
+    "saturate": {
+      unit: "%",
+      "default": 100,
+      css: "saturate"
+    },
+    "hueRotate": {
+      unit: "deg",
+      "default": 0,
+      css: "hue-rotate"
+    },
+    "contrast": {
+      unit: "%",
+      "default": 100,
+      css: "contrast"
+    },
+    "invert": {
+      unit: "%",
+      "default": 0,
+      css: "invert"
+    },
+    "grayscale": {
+      unit: "%",
+      "default": 0,
+      css: "grayscale"
+    },
+    "sepia": {
+      unit: "%",
+      "default": 0,
+      css: "sepia"
+    }
+  };
 
 }).call(this);
 
@@ -4754,6 +4981,11 @@ require.define("/src/ui/draggable.coffee",function(require,module,exports,__dirn
       return this.view.off(Events.TouchStart, this._touchStart);
     };
 
+    Draggable.prototype.emit = function(eventName, event) {
+      this.view.emit(eventName, event);
+      return Draggable.__super__.emit.call(this, eventName, event);
+    };
+
     Draggable.prototype.calculateVelocity = function() {
       var curr, prev, time, timeSinceLastMove, velocity;
       if (this._deltas.length < 2) {
@@ -4800,7 +5032,7 @@ require.define("/src/ui/draggable.coffee",function(require,module,exports,__dirn
       this.view.x = this._start.x + correctedDelta.x - this._offset.x;
       this.view.y = this._start.y + correctedDelta.y - this._offset.y;
       this._deltas.push(correctedDelta);
-      return this.view.emit(Events.DragMove, event);
+      return this.emit(Events.DragMove, event);
     };
 
     Draggable.prototype._touchStart = function(event) {

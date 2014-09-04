@@ -7,6 +7,10 @@
     margin: 0;
 }
 
+.npd-label span {
+    color: #888;
+}
+
 #project-directory {
     border-radius: 3px 0 0 3px;
     cursor: text;    
