@@ -1,0 +1,28 @@
+<div class="new-project-dialog modal">
+    <div class="modal-header">
+        <h1 class="dialog-title">{{ExtensionStrings.DIALOG_TITLE}}</h1>
+    </div>
+    <div class="modal-body">
+        <div class="field-container input-field">
+            <p class="npd-half-layout">
+                <label class="npd-label" for="project-name">{{ExtensionStrings.PROJECT_NAME_LABEL}}</label>
+                <input type="text" placeholder="{{NEXT_NEW_PROJECT_NAME}}" id="project-name"/>
+            </p>
+            <p class="npd-half-layout">
+                <label id="template-part" class="npd-label">{{ExtensionStrings.CHOOSE_TEMPLATE_LABEL}} <span>(in templateFiles Folder)</span></label>
+                <select id="project-template" required>
+                    <option id="none">{{ExtensionStrings.NO_TEMPLATE_OPTION_LABEL}}</option>
+                </select>                
+            </p>
+        </div>
+        <div class="field-container input-field">
+            <label class="npd-label" for="project-directory">{{ExtensionStrings.PROJECT_DIRECTORY_lABEL}}</label>
+            <input type="text" value="{{PROJECT_DIRECTORY}}" id="project-directory" readonly/>
+            <button id="change-directory" class="dialog-button btn">{{ExtensionStrings.CHANGE}}</button>
+        </div>    
+    </div>
+    <div class="modal-footer">
+        <button class="dialog-button btn" data-button-id="cancel">{{Strings.CANCEL}}</button>
+        <button class="dialog-button btn primary" data-button-id="ok">{{Strings.OK}}</button>
+    </div>
+</div>

@@ -1,0 +1,44 @@
+.npd-half-layout {
+    float: left;
+    width: 50%;
+}
+
+.npd-label {
+    margin: 0;
+}
+
+.npd-label span {
+    color: #888;
+}
+
+#project-directory {
+    border-radius: 3px 0 0 3px;
+    cursor: text;    
+    width: 470px;
+}
+
+#change-directory {
+    border-radius: 0 3px 3px 0;
+    margin: 0 0 0 -4px;
+}
+
+#project-name {
+    width: 265px;
+}
+
+#project-template {
+    width: 280px;
+    border: 1px solid rgb(156, 158, 158);
+    box-shadow: rgba(0,0,0,0.117647) 0px 1px 0px 0px inset;
+    outline: none;
+}
+
+#project-template:focus {
+    box-shadow: 0 0 0 2px #6fb5f1;
+    border: 1px solid #0055ad;
+}
+
+.new-project-dialog input, .new-project-dialog select {
+    margin: 2px 0;
+}
+
