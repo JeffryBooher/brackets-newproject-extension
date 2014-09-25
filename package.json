@@ -6,7 +6,7 @@
     "version": "0.4.91",
     "author": "Jeffry Booher|jsbooher@adobe.com (http://www.facebook.com/JeffryBooher)",
     "license": "MIT",
-    i18n: [
+    "i18n": [
         "en", 
         "fr",
         "de",
