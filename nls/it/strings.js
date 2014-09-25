@@ -27,20 +27,20 @@
 /*global define */
 
 define({
-    "MY_DOCUMENTS"                      : "Miei documenti",
+    "MY_DOCUMENTS"                      : "I miei documenti",
     "DOCUMENTS"                         : "Documenti",
-    "MENU_TITLE"                        : "nuovo progetto…",
+    "MENU_TITLE"                        : "Nuovo progetto…",
     "NEW_PROJECT_BASE_NAME"             : "Senza titolo-",
     "CHANGE"                            : "Cambia…",
-    "PROJECT_DIRECTORY_lABEL"           : "Cartella genitore:",
+    "PROJECT_DIRECTORY_lABEL"           : "Cartella progetto:",
     "CHOOSE_TEMPLATE_LABEL"             : "Template:",
-    "PROJECT_NAME_LABEL"                : "Nome:",
-    "DIALOG_TITLE"                      : "Crea Nuovo Progetto",
-    "NO_TEMPLATE_OPTION_LABEL"          : "Niente (Progetto vuoto)",
+    "PROJECT_NAME_LABEL"                : "Nome progetto:",
+    "DIALOG_TITLE"                      : "Crea nuovo progetto",
+    "NO_TEMPLATE_OPTION_LABEL"          : "Nessuno (progetto vuoto)",
     "ERROR_NOT_A_DIRECTORY"             : "Impossibile scrivere {1} perché non è una cartella valida, il volume non è in linea o non esiste.",
     "ERROR_DIRECTORY_ALREADY_EXISTS"    : "Impossibile creare la cartella di progetto {1} perché esiste già.",
     "ERROR_UNABLE_TO_WRITE_DIRECTORY"   : "Impossibile scrivere su {1} (Errore {0})",
-    "INVALID_PROJECT_NAME"              : "Nome del progetto invalido",
-    "INVALID_PROJECT_NAME_MESSAGE"      : "Il nome del progetto non può contenere i seguenti caratteri: /?*:;{}<>\\| or use any system reserved words.",
-    "ONE_OR_MORE_TEMPLATE_FILES_FAILED" : "Impossibile copiare tutti i file di modello nella cartella di destinazione. Uno o più operazioni di copia é fallito."
+    "INVALID_PROJECT_NAME"              : "Nome del progetto non valido",
+    "INVALID_PROJECT_NAME_MESSAGE"      : "Il nome del progetto non può contenere i seguenti caratteri: /?*:;{}<>\\| or utilizzare parole di sistema riservate.",
+    "ONE_OR_MORE_TEMPLATE_FILES_FAILED" : "Impossibile copiare tutti i file di modello nella cartella di destinazione. Uno o più operazioni di copia è fallito."
 });
