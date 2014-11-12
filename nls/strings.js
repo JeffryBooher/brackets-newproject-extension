@@ -38,6 +38,7 @@ define(function (require, exports, module) {
     module.exports = {
         root: true,
         "fr": true,
+        "fa-ir": true,
         "de": true,
         "it": true
     };
