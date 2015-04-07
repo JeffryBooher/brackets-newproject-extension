@@ -296,14 +296,14 @@ define(function (require, exports, module) {
     }
     
     function configureProject(destination, templateDetails, opts) {
-        return new ($.Deferred()).resolve().promise();
+        return (new $.Deferred()).resolve().promise();
     }
     
     function doOpenProjectFile(destination, filename, opts) {
         var fullpath = cannonicalizeDirectoryPath(destination) + filename;
         brackets.fs.stat(fullpath, function (err, stats) {
             if (err === brackets.fs.NO_ERROR && stats.isFile()) {
-                CommandManager.execute(Commands.FILE_ADD_TO_WORKING_SET, { fullPath: fullpath });
+                CommandManager.execute(Commands.CMD_ADD_TO_WORKINGSET_AND_OPEN, { fullPath: fullpath });
             }
         });
     }
@@ -328,7 +328,7 @@ define(function (require, exports, module) {
     
     function initProjectTemplatesFromFolder($templateSelect, templateFolder) {
         var i,
-            result = $.Deferred();
+            result = new $.Deferred();
         
         brackets.fs.readdir(templateFolder, function (err, fileList) {
             if (err === brackets.fs.NO_ERROR) {
@@ -345,7 +345,7 @@ define(function (require, exports, module) {
     }
     
     function initProjectTemplates($templateSelect) {
-        var result = $.Deferred();
+        var result = new $.Deferred();
         initProjectTemplatesFromFolder($templateSelect, getTemplateFilesFolder())
             .always(function () {
                 initProjectTemplatesFromFolder($templateSelect, getUserTemplateFilesFolder())
