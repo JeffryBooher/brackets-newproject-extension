@@ -150,41 +150,40 @@ define(function (require, exports, module) {
     }
     
     function copyFile(destination, inFile) {
-        var promise = new $.Deferred(),
+        var deferred = new $.Deferred(),
             outFile = cannonicalizeDirectoryPath(destination) + getFilenameFromPath(inFile);
         brackets.fs.stat(outFile, function (err, stats) {
             if (err === brackets.fs.ERR_NOT_FOUND) {
                 brackets.fs.copyFile(inFile, outFile, function (err) {
                     if (err === brackets.fs.NO_ERROR) {
-                        promise.resolve();
+                        deferred.resolve();
                     } else {
                         // unable to write file
-                        promise.reject(err);
+                        deferred.reject(err);
                     }
                 });
             } else if (err === brackets.fs.NO_ERROR) {
-                if (stats.isDirectory()) {
-                    promise.reject(brackets.fs.ERR_CANT_WRITE);
+                if (stats.isDirectory()){
+                    deferred.reject(brackets.fs.ERR_CANT_WRITE);
                 } else {
-                    promise.reject(brackets.fs.ERR_FILE_EXISTS);
+                    deferred.reject(brackets.fs.ERR_FILE_EXISTS);
                 }
             } else {
-                promise.reject(err);
+                deferred.reject(err);
             }
         });
     
-        return promise;
+        return deferred.promise();
     }
-
 
     function copyDirectory(destination, source) {
         var i,
             completeCount = 0,
             errorCount = 0,
-            promise = new $.Deferred();
+            deferred = new $.Deferred();
         
         if (!source || !destination) {
-            return promise.resolve(0);
+            return deferred.resolve(0).promise();
         }
             
         brackets.fs.readdir(source, function (err, fileList) {
@@ -199,7 +198,7 @@ define(function (require, exports, module) {
                 };
                 var alwaysHandler = function () {
                     if (++completeCount === fileList.length) {
-                        promise.resolve(errorCount);
+                        deferred.resolve(errorCount);
                     }
                 };
                 
@@ -230,18 +229,18 @@ define(function (require, exports, module) {
 
                 // avoid race condition on empty folder                
                 if (fileList.length === 0) {
-                    promise.resolve(0);
+                    deferred.resolve(0);
                 }
                 
             } else if (err === brackets.fs.ERR_NOT_FOUND) {
                 // No template folder is ok. Nothing to copy..
-                promise.resolve(0);
+                deferred.resolve(0);
             } else {
-                promise.reject(err);
+                deferred.reject(err);
             }
         });
         
-        return promise;
+        return deferred.promise();
     }
     
     function copyTemplateFiles(destination, templateDetails) {
@@ -249,58 +248,62 @@ define(function (require, exports, module) {
     }
 
     function createProjectFolder(projectFolder, templateDetails) {
-        var promise = new $.Deferred();
+        var deferred = new $.Deferred();
         brackets.fs.makedir(projectFolder, 777, function (err) {
             if (err === brackets.fs.NO_ERROR) {
                 copyTemplateFiles(projectFolder, templateDetails)
                     .done(function (errorCount) {
                         if (errorCount && errorCount > 0) {
                             showProjectErrorMessage(COPY_TEMPLATE_FILES_FAILED, projectFolder);
-                            promise.reject();
+                            deferred.reject();
                         } else {
-                            promise.resolve();
+                            deferred.resolve();
                         }
                     })
                     .fail(function (err) {
                         showProjectErrorMessage(err, projectFolder);
-                        promise.reject(err);
+                        deferred.reject(err);
                     });
                 
             } else {
                 showProjectErrorMessage(err, projectFolder);
-                promise.reject(err);
+                deferred.reject(err);
             }
         });
-        return promise;
+        return deferred.promise();
     }
     
     
     function createNewProject(projectFolder, templateDetails, opts) {
         var parentFolder = getParentDirectory(projectFolder),
-            promise = new $.Deferred();
+            deferred = new $.Deferred();
         
         brackets.fs.stat(parentFolder, function (err, stats) {
             if (err === brackets.fs.NO_ERROR && stats.isDirectory()) {
                 createProjectFolder(projectFolder, templateDetails)
                     .done(function () {
-                        promise.resolve();
+                        deferred.resolve(opts);
                     })
                     .fail(function () {
-                        promise.reject();
+                        deferred.reject();
                     });
             } else {
                 showProjectErrorMessage(CREATE_PARENT_DIRECTORY_ERROR, parentFolder);
-                promise.reject();
+                deferred.reject();
             }
         });
-        return promise;
+        return deferred.promise();
+    }
+    
+    function configureProject(destination, templateDetails, opts) {
+        return (new $.Deferred()).resolve().promise();
     }
     
     function doOpenProjectFile(destination, filename, opts) {
         var fullpath = cannonicalizeDirectoryPath(destination) + filename;
         brackets.fs.stat(fullpath, function (err, stats) {
             if (err === brackets.fs.NO_ERROR && stats.isFile()) {
-                CommandManager.execute(Commands.FILE_ADD_TO_WORKING_SET, { fullPath: fullpath });
+                CommandManager.execute(Commands.CMD_ADD_TO_WORKINGSET_AND_OPEN, { fullPath: fullpath });
             }
         });
     }
@@ -325,7 +328,7 @@ define(function (require, exports, module) {
     
     function initProjectTemplatesFromFolder($templateSelect, templateFolder) {
         var i,
-            result = $.Deferred();
+            result = new $.Deferred();
         
         brackets.fs.readdir(templateFolder, function (err, fileList) {
             if (err === brackets.fs.NO_ERROR) {
@@ -342,7 +345,7 @@ define(function (require, exports, module) {
     }
     
     function initProjectTemplates($templateSelect) {
-        var result = $.Deferred();
+        var result = new $.Deferred();
         initProjectTemplatesFromFolder($templateSelect, getTemplateFilesFolder())
             .always(function () {
                 initProjectTemplatesFromFolder($templateSelect, getUserTemplateFilesFolder())
@@ -462,7 +465,8 @@ define(function (require, exports, module) {
                         templateDetails = getSelectedTemplateDetails();
                     
                     getProjectTemplateOptions(templateDetails).done(function (opts) {
-                        createNewProject(destination, templateDetails, opts).done(function () {
+                        createNewProject(destination, templateDetails, opts).done(function (opts) {
+                            configureProject(destination, templateDetails, opts).done(function () {
                             ProjectManager.openProject(destination).done(function () {
                                 openStarterFile(destination, opts);
                             });
@@ -470,6 +474,7 @@ define(function (require, exports, module) {
                                 _prefs.set("newProjectOrdinal", ++data.ordinal);
                             }
                         });
+                    });
                     });
                 }
             });
