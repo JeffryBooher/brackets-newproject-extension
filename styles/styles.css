@@ -33,6 +33,10 @@
     outline: none;
 }
 
+body.dark #project-template {
+    color: rgb(255, 255, 255);
+}
+
 #project-template:focus {
     box-shadow: 0 0 0 2px #6fb5f1;
     border: 1px solid #0055ad;
