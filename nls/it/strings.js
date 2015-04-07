@@ -21,26 +21,26 @@
  * 
  */
 
-// English - root strings
+// Italian - root strings
 
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
 /*global define */
 
 define({
-    "MY_DOCUMENTS"                      : "My Documents",
-    "DOCUMENTS"                         : "Documents",
-    "MENU_TITLE"                        : "New Project…",
-    "NEW_PROJECT_BASE_NAME"             : "Untitled-",
-    "CHANGE"                            : "Change…",
-    "PROJECT_DIRECTORY_lABEL"           : "Parent Folder:",
+    "MY_DOCUMENTS"                      : "I miei documenti",
+    "DOCUMENTS"                         : "Documenti",
+    "MENU_TITLE"                        : "Nuovo progetto…",
+    "NEW_PROJECT_BASE_NAME"             : "Senza titolo-",
+    "CHANGE"                            : "Cambia…",
+    "PROJECT_DIRECTORY_lABEL"           : "Cartella progetto:",
     "CHOOSE_TEMPLATE_LABEL"             : "Template:",
-    "PROJECT_NAME_LABEL"                : "Name:",
-    "DIALOG_TITLE"                      : "Create New Project",
-    "NO_TEMPLATE_OPTION_LABEL"          : "None (Empty Project)",
-    "ERROR_NOT_A_DIRECTORY"             : "Unable to write to {1} because it is not a valid directory, the volume is offline or does not exist.",
-    "ERROR_DIRECTORY_ALREADY_EXISTS"    : "Unable to create the project directory {1} because it already exists.",
-    "ERROR_UNABLE_TO_WRITE_DIRECTORY"   : "unable to write to {1} (Error {0})",
-    "INVALID_PROJECT_NAME"              : "Invalid Project Name",
-    "INVALID_PROJECT_NAME_MESSAGE"      : "Project names cannot contain the following characters: /?*:;{}<>\\| or use any system reserved words.",
-    "ONE_OR_MORE_TEMPLATE_FILES_FAILED" : "Unable to copy all template files to the destination folder. One or more copy operations failed."
+    "PROJECT_NAME_LABEL"                : "Nome progetto:",
+    "DIALOG_TITLE"                      : "Crea nuovo progetto",
+    "NO_TEMPLATE_OPTION_LABEL"          : "Nessuno (progetto vuoto)",
+    "ERROR_NOT_A_DIRECTORY"             : "Impossibile scrivere {1} perché non è una cartella valida, il volume non è in linea o non esiste.",
+    "ERROR_DIRECTORY_ALREADY_EXISTS"    : "Impossibile creare la cartella di progetto {1} perché esiste già.",
+    "ERROR_UNABLE_TO_WRITE_DIRECTORY"   : "Impossibile scrivere su {1} (Errore {0})",
+    "INVALID_PROJECT_NAME"              : "Nome del progetto non valido",
+    "INVALID_PROJECT_NAME_MESSAGE"      : "Il nome del progetto non può contenere i seguenti caratteri: /?*:;{}<>\\| or utilizzare parole di sistema riservate.",
+    "ONE_OR_MORE_TEMPLATE_FILES_FAILED" : "Impossibile copiare tutti i file di modello nella cartella di destinazione. Uno o più operazioni di copia è fallito."
 });

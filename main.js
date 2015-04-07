@@ -121,6 +121,8 @@ define(function (require, exports, module) {
             message = ExtensionStrings.ONE_OR_MORE_TEMPLATE_FILES_FAILED;
         } else if (err === CREATE_PARENT_DIRECTORY_ERROR) {
             message = ExtensionStrings.ERROR_NOT_A_DIRECTORY;
+        } else if (err === brackets.fs.ERR_FILE_EXISTS) {
+            message = ExtensionStrings.ERROR_DIRECTORY_ALREADY_EXISTS;
         } else {
             message = ExtensionStrings.ERROR_UNABLE_TO_WRITE_DIRECTORY;
         }
@@ -160,8 +162,8 @@ define(function (require, exports, module) {
                         deferred.reject(err);
                     }
                 });
-            } else if (err == brackets.fs.NO_ERROR) {
-                if (stats.isDirectory()) {
+            } else if (err === brackets.fs.NO_ERROR) {
+                if (stats.isDirectory()){
                     deferred.reject(brackets.fs.ERR_CANT_WRITE);
                 } else {
                     deferred.reject(brackets.fs.ERR_FILE_EXISTS);
