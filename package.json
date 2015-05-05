@@ -7,13 +7,14 @@
     "author": "Jeffry Booher|jsbooher@adobe.com (http://www.facebook.com/JeffryBooher)",
     "license": "MIT",
     "i18n": [
-        "en", 
+        "en",
         "fr",
         "fa-ir",
         "de",
         "it",
         "uk",
-        "ru"
+        "ru",
+        "pl"
     ],
     "engines": {
         "brackets": ">=0.34.0"
