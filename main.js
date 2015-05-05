@@ -163,7 +163,7 @@ define(function (require, exports, module) {
                     }
                 });
             } else if (err === brackets.fs.NO_ERROR) {
-                if (stats.isDirectory()){
+                if (stats.isDirectory()) {
                     deferred.reject(brackets.fs.ERR_CANT_WRITE);
                 } else {
                     deferred.reject(brackets.fs.ERR_FILE_EXISTS);
@@ -467,14 +467,14 @@ define(function (require, exports, module) {
                     getProjectTemplateOptions(templateDetails).done(function (opts) {
                         createNewProject(destination, templateDetails, opts).done(function (opts) {
                             configureProject(destination, templateDetails, opts).done(function () {
-                            ProjectManager.openProject(destination).done(function () {
-                                openStarterFile(destination, opts);
+                                ProjectManager.openProject(destination).done(function () {
+                                    openStarterFile(destination, opts);
+                                });
+                                if (projectName === defaultProjectName && data.status === STATUS_SUCCEEDED) {
+                                    _prefs.set("newProjectOrdinal", ++data.ordinal);
+                                }
                             });
-                            if (projectName === defaultProjectName && data.status === STATUS_SUCCEEDED) {
-                                _prefs.set("newProjectOrdinal", ++data.ordinal);
-                            }
                         });
-                    });
                     });
                 }
             });
