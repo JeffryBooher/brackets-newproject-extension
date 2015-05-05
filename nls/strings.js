@@ -41,7 +41,7 @@ define(function (require, exports, module) {
         "fa-ir": true,
         "de": true,
         "it": true,
-        "uk": true
+        "uk": true,
         "ru": true
     };
 });

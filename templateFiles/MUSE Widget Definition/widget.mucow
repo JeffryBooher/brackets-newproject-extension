@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<HTMLWidget name="widget" formatNumber="3" creator="Your name" isResizable="false" defaultWidth="100" defaultHeight="35">
+    <!-- 
+    
+    TODO: Add controls and widget output here
+    @see http://adobe-muse.github.io/MuCowDocs for more information
+    
+    -->
+</HTMLWidget>
