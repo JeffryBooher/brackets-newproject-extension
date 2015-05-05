@@ -4,7 +4,7 @@
     "description": "Create New Projects without leaving Brackets.",
     "homepage": "https://github.com/JeffryBooher/brackets-newproject-extension",
     "version": "0.4.97",
-    "author": "Jeffry Booher|jsbooher@adobe.com (http://www.facebook.com/JeffryBooher)",
+    "author": "Jeffry Booher",
     "license": "MIT",
     "i18n": [
         "en",
