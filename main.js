@@ -191,7 +191,7 @@ define(function (require, exports, module) {
                 // exclude the template config file
                 var newProjectConfigFileIndex = fileList.indexOf(TEMPLATE_CONFIG_FILENAME);
                 if (newProjectConfigFileIndex >= 0) {
-                    fileList = fileList.slice(0, newProjectConfigFileIndex).concat(fileList.slice(newProjectConfigFileIndex, -1));
+                    fileList.splice(newProjectConfigFileIndex, 1);
                 }
                 var failHandler = function () {
                     ++errorCount;
