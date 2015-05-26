@@ -43,6 +43,7 @@ define(function (require, exports, module) {
         "it": true,
         "uk": true,
         "ru": true,
-        "el": true
+        "el": true,
+        "pl": true
     };
 });
