@@ -14,7 +14,8 @@
         "it",
         "uk",
         "ru",
-        "pl"
+        "pl",
+        "el"
     ],
     "engines": {
         "brackets": ">=0.34.0"
